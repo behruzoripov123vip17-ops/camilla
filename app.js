@@ -440,6 +440,13 @@
   function selectedServices() { return B.services.map(serviceById).filter(Boolean); }
   function totalMinutes() { const service = serviceById(B.services[0]); return service ? (service.dur.m || service.dur.h * 60) : 120; }
   function totalPrice() { return selectedServices().reduce((n, s) => n + s.price.a, 0); }
+  function validContact(value) {
+    const v = String(value || "").trim();
+    if (!v) return false;
+    if (/^@[A-Za-z0-9_]{5,32}$/.test(v)) return true;
+    const digits = v.replace(/\D/g, "");
+    return digits.length >= 9 && digits.length <= 15;
+  }
   const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   let occupiedBookings = [];
 
@@ -536,7 +543,7 @@
     if (B.step === 4) {
       panel.innerHTML = `<div class="form anim">
         <label><span>${t("book.name")} *</span><input id="bName" value="${esc(B.name)}" placeholder="${t("book.name")}"></label>
-        <label><span>${t("book.contact")}</span><input id="bContact" value="${esc(B.contact)}" placeholder="@username / +998 …"></label>
+        <label><span>${t("book.contact")} *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label>
         <label><span>${t("book.comment")}</span><textarea id="bComment" rows="3" placeholder="${t("book.comment")}">${esc(B.comment)}</textarea></label>
       </div>`;
     }
@@ -804,6 +811,7 @@
         if (B.step === 4) {
           B.name = $("#bName").value.trim(); B.contact = $("#bContact").value.trim(); B.comment = $("#bComment").value.trim();
           if (!B.name) return shake("#bookPanels", t("book.errName"));
+          if (!validContact(B.contact)) return shake("#bookPanels", t("book.errContact"));
         }
         B.step = Math.min(5, B.step + 1);
         renderBookingStep();
@@ -819,8 +827,8 @@
         if (!currentUser) return showAuth();
         const startMinutes = Number(B.time.slice(0, 2)) * 60 + Number(B.time.slice(3, 5));
         const endTime = timeLabel(startMinutes + totalMinutes());
-        localStorage.setItem("camilla_last_booking", JSON.stringify({ date: B.date, time: B.time, services: B.services, name: B.name, number: bookingNumber(), phone: "941215444" }));
-        api("/api/bookings", { method: "POST", body: JSON.stringify({ specialist_id: 1, service_id: B.services[0], starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`, notes: B.comment }) })
+        localStorage.setItem("camilla_last_booking", JSON.stringify({ date: B.date, time: B.time, services: B.services, name: B.name, number: bookingNumber(), contact: B.contact }));
+        api("/api/bookings", { method: "POST", body: JSON.stringify({ specialist_id: 1, service_id: B.services[0], starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`, contact: B.contact, notes: B.comment }) })
           .then(() => { navigator.clipboard.writeText(bookingMessage()).catch(() => {}); loadOccupiedBookings(); toast("Запись сохранена"); window.open(CONFIG.telegramURL, "_blank", "noopener"); })
           .catch((err) => toast(err.message));
         return;
