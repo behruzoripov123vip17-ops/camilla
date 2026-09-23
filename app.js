@@ -219,30 +219,61 @@
     });
   }
 
-  /* ============ CURSOR ============ */
   function cursor() {
-    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
-    const dot = $(".cursor-dot"), ring = $(".cursor-ring");
-    let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y;
-    // Было (из-за чего код падает, если элемента нет):
+    if (RM || window.matchMedia("(pointer:fine)").matches) return;
+    const dot = document.querySelector(".cursor-dot");
+    const ring = document.querySelector(".cursor-ring");
+    if (!dot || !ring) return;
 
+    let x = innerWidth / 2, y = innerHeight / 2;
+    let rx = x, ry = y;
 
-// Стало (безопасно: код выполнится только тогда, когда элемент реально существует):
-const element = document.querySelector('.my-element');
-if (element) {
-    element.style.display = 'block';
-}
-    // addEventListener("mousemove", (e) => { x = e.clientX; y = e.clientY; dot.style.transform = `translate(${x}px,${y}px)`; });
-    // (function loop() {
-    //   rx += (x - rx) * 0.14; ry += (y - ry) * 0.14;
-    //   ring.style.transform = `translate(${rx}px,${ry}px)`;
-    //   requestAnimationFrame(loop);
-    //// })();
-    document.addEventListener("mouseover", (e) => {
-      const hit = e.target.closest("a,button,.chip,.tr,[data-tilt]");
-      ring.classList.toggle("grow", !!hit);
+    document.addEventListener("mousemove", (e) => {
+        x = e.clientX;
+        y = e.clientY;
+        dot.style.transform = `translate(${x}px, ${y}px)`;
     });
-  }
+
+    (function loop() {
+        rx += (x - rx) * 0.14;
+        ry += (y - ry) * 0.14;
+        ring.style.transform = `translate(${rx}px, ${ry}px)`;
+        requestAnimationFrame(loop);
+    })();
+
+    document.addEventListener("mouseover", (e) => {
+        const hit = e.target.closest("a, button, chip, tr, [data-tilt]");
+        ring.classList.toggle("grow", !!hit);
+    });
+}
+
+function cursor() {
+    if (RM || window.matchMedia("(pointer:fine)").matches) return;
+    const dot = document.querySelector(".cursor-dot");
+    const ring = document.querySelector(".cursor-ring");
+    if (!dot || !ring) return;
+
+    let x = innerWidth / 2, y = innerHeight / 2;
+    let rx = x, ry = y;
+
+    document.addEventListener("mousemove", (e) => {
+        x = e.clientX;
+        y = e.clientY;
+        dot.style.transform = `translate(${x}px, ${y}px)`;
+    });
+
+    (function loop() {
+        rx += (x - rx) * 0.14;
+        ry += (y - ry) * 0.14;
+        ring.style.transform = `translate(${rx}px, ${ry}px)`;
+        requestAnimationFrame(loop);
+    })();
+
+    document.addEventListener("mouseover", (e) => {
+        const hit = e.target.closest("a, button, chip, tr, [data-tilt]");
+        ring.classList.toggle("grow", !!hit);
+    });
+}
 
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
