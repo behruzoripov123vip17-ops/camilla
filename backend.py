@@ -411,6 +411,8 @@ class APIHandler(BaseHTTPRequestHandler):
                     conflict = conn.execute("SELECT 1 FROM bookings WHERE specialist_id=? AND status IN ('PENDING','CONFIRMED') AND starts_at < ? AND ends_at > ?", (data["specialist_id"], data["ends_at"], data["starts_at"])).fetchone()
                     if conflict: return self.json(409, {"error": "Это время уже занято"})
                     contact = str(data.get("contact", "")).strip()[:120]
+                    if not contact:
+                        return self.json(400, {"error": "Укажите телефон или Telegram для подтверждения записи"})
                     cur = conn.execute("INSERT INTO bookings(user_id,specialist_id,service_id,starts_at,ends_at,notes,contact) VALUES(?,?,?,?,?,?,?)", (user["id"], *required, data.get("notes", ""), contact))
                     service = conn.execute("SELECT name FROM services WHERE id=?", (data["service_id"],)).fetchone()
                     owner = conn.execute("SELECT id FROM users WHERE role='ADMIN' ORDER BY id LIMIT 1").fetchone()
