@@ -245,6 +245,53 @@
       ring.classList.toggle("grow", !!hit);
     });
   }
+  /* ============ BRUSH CURSOR ============ */
+  function brushCursor() {
+    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
+
+    const brush = $("#brushCursor");
+    if (!brush) return;
+
+    const dot = $(".cursor-dot");
+    const ring = $(".cursor-ring");
+    if (dot) dot.style.display = "none";
+    if (ring) ring.style.display = "none";
+
+    let visible = false;
+    let lastX = 0, lastY = 0;
+
+    const move = (e) => {
+      const x = e.clientX, y = e.clientY;
+      const dx = x - lastX, dy = y - lastY;
+      const speed = Math.min(1, Math.hypot(dx, dy) / 32);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+      brush.style.transform =
+        "translate3d(" + (x - 7) + "px," + (y - 7) + "px,0) " +
+        "rotate(" + (angle * 0.06) + "deg) " +
+        "scale(" + (1 + speed * 0.06) + ")";
+
+      if (!visible) {
+        visible = true;
+        brush.classList.add("on");
+      }
+      lastX = x; lastY = y;
+    };
+
+    document.addEventListener("pointermove", move, { passive: true });
+    document.addEventListener("pointerover", (e) => {
+      const hit = e.target.closest("a,button,input,select,textarea,.chip,.tab,.tr,[data-tilt]");
+      brush.classList.toggle("hover", !!hit);
+    });
+    document.addEventListener("pointerleave", () => {
+      visible = false;
+      brush.classList.remove("on");
+    });
+    document.addEventListener("pointerenter", () => {
+      if (visible) brush.classList.add("on");
+    });
+  }
+
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
     document.addEventListener("pointerdown", (e) => {
@@ -808,8 +855,36 @@
     toast(msg);
   }
 
+  /* ============ SITE LOADER ============ */
+  function siteLoader() {
+    const loader = $("#siteLoader");
+    if (!loader) return;
+
+    const finish = () => {
+      loader.classList.add("is-hidden");
+      document.body.classList.remove("site-is-loading");
+      document.body.style.overflow = "";
+    };
+
+    document.body.classList.add("site-is-loading");
+    document.body.style.overflow = "hidden";
+
+    const minTime = new Promise((resolve) => setTimeout(resolve, 4350));
+    const pageReady = document.readyState === "complete"
+      ? Promise.resolve()
+      : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
+
+    Promise.all([minTime, pageReady]).then(() => {
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    });
+
+    // Never leave the site locked if an external animation/CDN is slow.
+    setTimeout(finish, 6500);
+  }
+
   /* ============ INIT ============ */
   function init() {
+    siteLoader();
     renderMedia();
     splitHero();
     applyI18n();
