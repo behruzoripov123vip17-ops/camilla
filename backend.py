@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sqlite3
 import smtplib
@@ -271,7 +272,7 @@ def create_session(conn, user_id: int) -> str:
 
 
 def public_user(row):
-    return {k: row[k] for k in ("id", "name", "email", "role", "language", "created_at") if k in row.keys()}
+    return {k: row[k] for k in ("id", "name", "email", "phone", "role", "language", "created_at") if k in row.keys()}
 
 
 def verify_google_credential(credential: str):
@@ -320,17 +321,25 @@ class APIHandler(BaseHTTPRequestHandler):
             try:
                 data = self.body()
                 if path == "/api/auth/register":
-                    email = data.get("email", "").strip().lower()
-                    if not email or "@" not in email or len(data.get("password", "")) < 8:
-                        return self.json(400, {"error": "Укажите корректный email и пароль минимум из 8 символов"})
-                    # The owner's address is reserved: it can only use the credentials
-                    # created locally during initialisation above.
+                    name = str(data.get("name", "")).strip()
+                    phone = str(data.get("phone", "")).strip()
+                    email = str(data.get("email", "")).strip().lower()
+                    password = str(data.get("password", ""))
+                    if not re.fullmatch(r"[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳІіЇї\s'’-]{2,60}", name):
+                        return self.json(400, {"error": "Введите настоящее имя и фамилию (2–60 символов)."})
+                    if not re.fullmatch(r"\+?[0-9\s()\-]{9,20}", phone):
+                        return self.json(400, {"error": "Введите корректный номер телефона."})
+                    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+                        return self.json(400, {"error": "Введите корректный email."})
+                    if len(password) < 10 or not re.search(r"[A-Za-zА-Яа-я]", password) or not re.search(r"[0-9]", password):
+                        return self.json(400, {"error": "Пароль должен содержать минимум 10 символов, буквы и цифры."})
                     if email == OWNER_EMAIL.lower():
-                        return self.json(403, {"error": "Этот email зарезервирован для аккаунта владельца. Войдите с паролем владельца."})
+                        return self.json(403, {"error": "Этот email зарезервирован для аккаунта владельца."})
                     if conn.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
-                        return self.json(409, {"error": "Этот email уже зарегистрирован"})
-                    name = data.get("name", "").strip() or email.split("@", 1)[0]
-                    cur = conn.execute("INSERT INTO users(name,email,password_hash,language) VALUES(?,?,?,?)", (name, email, password_hash(data["password"]), data.get("language", "ru")))
+                        return self.json(409, {"error": "Этот email уже зарегистрирован."})
+                    if conn.execute("SELECT 1 FROM users WHERE phone=?", (phone,)).fetchone():
+                        return self.json(409, {"error": "Этот номер телефона уже зарегистрирован."})
+                    cur = conn.execute("INSERT INTO users(name,email,phone,password_hash,language) VALUES(?,?,?,?,?)", (name, email, phone, password_hash(password), data.get("language", "ru")))
                     token = create_session(conn, cur.lastrowid)
                     return self.json(201, {"user": public_user(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/login":
