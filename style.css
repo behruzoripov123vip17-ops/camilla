@@ -549,3 +549,112 @@ a,button,input,select,textarea,.chip,.tab,.tr{cursor:none!important}
 .music-toggle.muted{opacity:.75}
 .site-loader-caption{bottom:106px}
 @media(max-width:760px){.booking-form-grid{grid-template-columns:1fr}.account-button{width:40px;height:40px;min-width:40px}}
+
+
+/* ===== CAMILLA visual polish v2 ===== */
+.site-is-loading > :not(#siteLoader){visibility:visible!important}
+html, body { cursor: none; }
+.cursor-dot, .cursor-ring { display:none!important; visibility:hidden!important; opacity:0!important; }
+.brush-cursor { z-index:10001; width:42px; height:42px; }
+.brush-cursor .brush-svg { width:100%; height:100%; display:block; filter:drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
+.brush-cursor.hover { filter:drop-shadow(0 0 14px rgba(196,181,253,.75)); transform-origin:16px 16px; }
+.google-continue-label {
+  text-align:center;
+  margin:14px 0 8px;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.google-sign-in {
+  padding:4px 0;
+  transition:transform .25s var(--spring), filter .25s ease;
+}
+.google-sign-in:hover { transform:translateY(-1px); filter:brightness(1.08); }
+
+.book-card {
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+.book-card::before {
+  content:"";
+  position:absolute;
+  inset:-1px;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(115deg,transparent 0 35%,rgba(196,181,253,.12) 45%,transparent 55% 100%);
+  transform:translateX(-120%);
+  animation:bookSheen 7s ease-in-out infinite;
+  z-index:-1;
+}
+@keyframes bookSheen {
+  0%,55%{transform:translateX(-120%)}
+  75%,100%{transform:translateX(120%)}
+}
+.step-dot { position:relative; overflow:hidden; }
+.step-dot::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  transform:translateX(-120%);
+  transition:transform .55s ease;
+}
+.step-dot:hover::after { transform:translateX(120%); }
+.step-dot.on { box-shadow:0 12px 34px rgba(124,58,237,.18); transform:translateY(-2px); }
+.booking-contact-form {
+  padding:clamp(4px,1vw,10px);
+  border-radius:20px;
+}
+.field-card {
+  transition:transform .3s var(--spring), filter .3s ease;
+}
+.field-card:focus-within { transform:translateY(-2px); }
+.form-step-mark {
+  position:relative;
+  overflow:hidden;
+}
+.form-step-mark::after {
+  content:"";
+  position:absolute;
+  width:80px;height:160%;
+  background:rgba(255,255,255,.18);
+  transform:rotate(24deg) translateX(-90px);
+  animation:markShine 3.8s ease-in-out infinite;
+}
+@keyframes markShine {
+  0%,65%{transform:rotate(24deg) translateX(-90px)}
+  82%,100%{transform:rotate(24deg) translateX(110px)}
+}
+.btn-primary {
+  position:relative;
+  overflow:hidden;
+}
+.btn-primary::after {
+  content:"";
+  position:absolute;
+  top:-30%; bottom:-30%; left:-35%;
+  width:22%;
+  background:rgba(255,255,255,.22);
+  transform:rotate(22deg) translateX(-150px);
+  transition:transform .7s ease;
+}
+.btn-primary:hover::after { transform:rotate(22deg) translateX(620px); }
+.account-button {
+  position:relative;
+  overflow:hidden;
+}
+.account-button::after {
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  pointer-events:none;
+}
+@media(max-width:760px){
+  .google-continue-label{font-size:10px}
+  .book-card{border-radius:22px}
+}
