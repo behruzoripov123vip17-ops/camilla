@@ -274,7 +274,6 @@ function cursor() {
         ring.classList.toggle("grow", !!hit);
     });
 }
-
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
     document.addEventListener("pointerdown", (e) => {
