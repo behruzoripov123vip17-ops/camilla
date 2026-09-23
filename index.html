@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Camilla — Салон красоты</title>
+  <title>CAMILLA Beauty Studio | Маникюр, педикюр, депиляция</title>
   <meta name="description" content="Студия CAMILLA: маникюр, педикюр, депиляция и Access Bars. 14 лет опыта. Запись через Telegram и Instagram." />
   <meta name="theme-color" content="#0e0714" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0714'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' fill='%23c4b5fd' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:аge/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0714'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' fill='%23c4b5fd' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="CAMILLA Beauty Studio" />
   <meta property="og:description" content="Маникюр • Педикюр • Депиляция • Access Bars. Запись онлайн." />
@@ -14,7 +14,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+JP:wght@300;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=14" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@dotlottie/player-component@v1.3.0/dist/dotlottie-player.js"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -35,10 +37,24 @@
   }
   </script>
 </head>
-<body>
+<body class="site-is-loading">
+  <div id="siteLoader" class="site-loader" role="status" aria-live="polite" aria-label="Загрузка сайта">
+    <div class="site-loader-grid" aria-hidden="true"></div>
+    <div class="site-loader-brand" aria-hidden="true">
+      <span class="site-loader-kanji">美</span>
+      <span>CAMILLA<small>BEAUTY STUDIO</small></span>
+    </div>
+    <div class="site-loader-main">
+      <dotlottie-player src="https://lottie.host/ef1c4cb0-fa61-4656-a1b0-9ff837b99ae2/g8EkmOcmO0.lottie" background="transparent" speed="1" loop autoplay aria-label="Анимация загрузки"></dotlottie-player>
+    </div>
+    <div class="site-loader-caption" aria-hidden="true"><span></span>YOUR BEAUTY RITUAL<span></span></div>
+    <div class="site-loader-progress" aria-hidden="true"><i></i></div>
+    <span class="sr-only">Подождите, сайт загружается.</span>
+  </div>
   <div class="progress" aria-hidden="true"><i></i></div>
-  <div class="cursor-dot" aria-hidden="true"></div>
-  <div class="cursor-ring" aria-hidden="true"></div>
+  <div id="brushCursor" class="brush-cursor" aria-hidden="true">
+    <img src="images/cursor-brush.png" alt="Brush Cursor" />
+  </div>
   <div class="bg" aria-hidden="true">
     <span class="orb o1" data-parallax="-0.06"></span>
     <span class="orb o2" data-parallax="0.05"></span>
@@ -67,7 +83,7 @@
         <button class="lang-btn" data-lang="en">EN</button>
       </div>
       <a class="btn btn-primary btn-sm magnet" href="#booking" data-i18n="cta.book">Забронировать место</a>
-      <button id="accountBtn" class="btn btn-ghost btn-sm" type="button" aria-label="Аккаунт">Аккаунт</button>
+      <button id="accountBtn" class="btn btn-ghost btn-sm" type="button" aria-label="Гостевой режим — создать аккаунт или войти" title="Гостевой режим"><img src="images/account-icon-24.png" alt="Аккаунт" style="width: 20px; height: 20px; filter: invert(1); opacity: 0.8;"></button>
       <button id="burger" class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
     </div>
   </header>
@@ -319,15 +335,18 @@
     <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <button id="authClose" class="auth-close" type="button" aria-label="Закрыть">×</button>
       <p class="eyebrow small"><span class="line"></span><span>CAMILLA ACCOUNT</span></p>
-      <h3 id="authTitle">Войти в аккаунт</h3>
+      <h3 id="authTitle">Создать аккаунт</h3>
+      <p id="authHint" class="auth-hint">Сейчас вы в гостевом режиме. Зарегистрируйтесь по email и паролю, чтобы сохранять записи.</p>
       <form id="authForm">
-        <label class="auth-name-field"><span>Имя</span><input id="authName" autocomplete="name"></label>
         <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" required></label>
-        <label><span>Пароль</span><input id="authPassword" type="password" minlength="8" autocomplete="current-password" required></label>
-        <button id="authSubmit" class="btn btn-primary" type="submit">Войти</button>
+        <label><span>Пароль</span><input id="authPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+        <button id="authSubmit" class="btn btn-primary" type="submit">Зарегистрироваться</button>
       </form>
       <p id="authError" class="auth-error" role="alert"></p>
-      <button id="authSwitch" class="auth-switch" type="button">Создать аккаунт</button>
+      <div class="auth-divider"><span>или</span></div>
+      <div id="googleSignIn" class="google-sign-in" aria-label="Войти через Google"></div>
+      <p id="googleAuthHint" class="auth-hint google-auth-hint" hidden></p>
+      <button id="authSwitch" class="auth-switch" type="button">У меня уже есть аккаунт</button>
     </div>
   </div>
   <div id="adminModal" class="auth-modal" aria-hidden="true">
@@ -336,12 +355,59 @@
       <p class="eyebrow small"><span class="line"></span><span>ADMIN PANEL</span></p>
       <h3 id="adminTitle">Управление записями</h3>
       <p class="admin-note">Только для владельца сайта. Здесь можно подтверждать или отменять записи клиентов.</p>
+      <div id="adminAnalytics" class="admin-analytics" aria-label="Аналитика"></div>
+      <div id="adminNotifications" class="admin-notifications"></div>
       <div id="adminBookings" class="admin-bookings"></div>
     </div>
   </div>
+  <div id="profileModal" class="auth-modal" aria-hidden="true">
+    <div class="auth-card admin-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <button id="profileClose" class="auth-close" type="button" aria-label="Закрыть">×</button>
+      <p class="eyebrow small"><span class="line"></span><span>MY ACCOUNT</span></p>
+      <h3 id="profileTitle">Мои записи</h3>
+      <div id="profileBookings" class="admin-bookings"></div>
+      <button id="profileLogout" class="auth-switch" type="button">Выйти из аккаунта</button>
+    </div>
+  </div>
   <div class="toasts" aria-live="polite"></div>
+  <audio id="siteMusic" loop preload="auto" aria-hidden="true">
+    <source src="audio/echo-lounge.mp3" type="audio/mpeg" />
+  </audio>
 
-  <script src="i18n.js?v=2"></script>
-<script src="app.js?v=9"></script>
+  <script src="js/i18n.js?v=12"></script>
+  <script src="js/app.js?v=13"></script>
+  <script>
+    (() => {
+      const loader = document.getElementById('siteLoader');
+      const music = document.getElementById('siteMusic');
+      music.volume = 0.28;
+      const playMusic = () => music.play().catch(() => {});
+      const stopMusic = () => {
+        music.pause();
+        music.currentTime = 0;
+      };
+
+      // Некоторые браузеры разрешают звук только после первого действия пользователя.
+      document.addEventListener('pointerdown', playMusic, { once: true, passive: true });
+      document.addEventListener('keydown', playMusic, { once: true });
+      window.addEventListener('pagehide', stopMusic);
+      window.addEventListener('beforeunload', stopMusic);
+
+      // 4.45 s показа + 0.55 s плавного исчезновения = 5 секунд всего.
+      window.setTimeout(() => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          document.body.classList.remove('site-is-loading');
+          loader.remove();
+          playMusic();
+        };
+        loader.classList.add('is-hidden');
+        loader.addEventListener('transitionend', finish, { once: true });
+        window.setTimeout(finish, 600);
+      }, 4450);
+    })();
+  </script>
 </body>
 </html>
