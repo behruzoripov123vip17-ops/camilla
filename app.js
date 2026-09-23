@@ -224,10 +224,18 @@
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
     const dot = $(".cursor-dot"), ring = $(".cursor-ring");
     let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y;
-    addEventListener("mousemove", (e) => { x = e.clientX; y = e.clientY; dot.style.transform = `translate(${x}px,${y}px)`; });
-    (function loop() {
-      rx += (x - rx) * 0.14; ry += (y - ry) * 0.14;
-      ring.style.transform = `translate(${rx}px,${ry}px)`;
+    // Было (из-за чего код падает, если элемента нет):
+document.querySelector('.my-element').style.display = 'block';
+
+// Стало (безопасно: код выполнится только тогда, когда элемент реально существует):
+const element = document.querySelector('.my-element');
+if (element) {
+    element.style.display = 'block';
+}
+    // addEventListener("mousemove", (e) => { x = e.clientX; y = e.clientY; dot.style.transform = `translate(${x}px,${y}px)`; });
+    // (function loop() {
+    //   rx += (x - rx) * 0.14; ry += (y - ry) * 0.14;
+    //   ring.style.transform = `translate(${rx}px,${ry}px)`;
       requestAnimationFrame(loop);
     })();
     document.addEventListener("mouseover", (e) => {
