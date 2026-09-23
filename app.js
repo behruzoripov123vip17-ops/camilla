@@ -541,11 +541,7 @@
         : `<p class="empty">${t("book.errDate")}</p>`;
     }
     if (B.step === 4) {
-      panel.innerHTML = `<div class="form anim">
-        <label><span>${t("book.name")} *</span><input id="bName" value="${esc(B.name)}" placeholder="${t("book.name")}"></label>
-        <label><span>${t("book.contact")} *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label>
-        <label><span>${t("book.comment")}</span><textarea id="bComment" rows="3" placeholder="${t("book.comment")}">${esc(B.comment)}</textarea></label>
-      </div>`;
+      panel.innerHTML = `<div class="booking-contact-form anim"><div class="booking-form-intro"><span class="form-step-mark">04</span><div><h4>${t("book.s4")}</h4><p>Оставьте данные, чтобы студия могла подтвердить запись.</p></div></div><div class="booking-form-grid"><label class="field-card"><span>${t("book.name")} *</span><input id="bName" autocomplete="name" value="${esc(B.name)}" placeholder="Ваше имя и фамилия"></label><label class="field-card"><span>${t("book.contact")} *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label></div><label class="field-card field-wide"><span>${t("book.comment")}</span><textarea id="bComment" rows="4" placeholder="Например: хочу нежный дизайн или есть пожелания по времени">${esc(B.comment)}</textarea></label><div class="booking-privacy"><span class="privacy-dot"></span><span>Контактные данные нужны только для подтверждения записи.</span></div></div>`;
     }
     if (B.step === 5) {
       const svc = serviceById(B.services[0]);
@@ -676,6 +672,13 @@
       } catch (err) { $("#authError").textContent = err.message; }
     });
     $("#adminClose")?.addEventListener("click", () => $("#adminModal").classList.remove("on"));
+    $("#profileClose")?.addEventListener("click", () => $("#profileModal")?.classList.remove("on"));
+    $("#profileLogout")?.addEventListener("click", async () => {
+      try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch (_) {}
+      currentUser = null;
+      $("#profileModal")?.classList.remove("on");
+      toast("Вы вышли из аккаунта");
+    });
     $("#adminBookings")?.addEventListener("click", async (e) => {
       const button = e.target.closest("[data-admin-status]"); if (!button) return;
       try { await api("/api/admin/bookings/status", { method: "POST", body: JSON.stringify({ id: Number(button.dataset.bookingId), status: button.dataset.adminStatus }) }); toast("Статус записи обновлён"); showAdmin(); loadOccupiedBookings(); }
@@ -696,20 +699,31 @@
   function music() {
     const audio = $("#siteMusic"), toggle = $("#musicToggle");
     if (!audio || !toggle) return;
+    let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
     const setState = (on) => {
       toggle.classList.toggle("playing", on);
+      toggle.classList.toggle("muted", !on);
       toggle.setAttribute("aria-pressed", String(on));
+      toggle.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
     };
-    const play = () => audio.play().then(() => setState(true)).catch(() => setState(false));
+    audio.volume = 0.34;
+    const play = () => {
+      if (mutedByUser) return Promise.resolve(false);
+      return audio.play().then(() => { setState(true); return true; }).catch(() => { setState(false); return false; });
+    };
     const unlock = () => { play(); };
-    audio.volume = 0.42;
     toggle.addEventListener("click", () => {
-      if (audio.paused) play(); else { audio.pause(); setState(false); }
+      if (audio.paused) { mutedByUser = false; localStorage.removeItem("camilla_music_off"); play(); }
+      else { mutedByUser = true; localStorage.setItem("camilla_music_off","1"); audio.pause(); setState(false); }
     });
+    window.addEventListener("camilla:ready", () => { setTimeout(play, 120); }, { once: true });
     ["pointerdown","keydown","touchstart"].forEach((event) => document.addEventListener(event, unlock, { once: true, passive: true }));
-    addEventListener("load", play, { once: true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) audio.pause();
+      else if (!mutedByUser) play();
+    });
     addEventListener("pagehide", () => { audio.pause(); audio.currentTime = 0; }, { once: true });
-    setTimeout(play, 120);
+    setState(false);
   }
 
   /* ============ GOOGLE AUTH ============ */
@@ -891,7 +905,12 @@
           .catch((err) => toast(err.message));
         return;
       }
-      if (e.target.closest("#sendIg")) { navigator.clipboard.writeText(bookingMessage()).catch(() => {}); toast(t("book.copied")); return; }
+      if (e.target.closest("#sendIg")) {
+        if (!currentUser) return showAuth();
+        navigator.clipboard.writeText(bookingMessage()).catch(() => {});
+        toast(t("book.copied"));
+        return;
+      }
 
       /* burger */
       if (e.target.closest("#burger")) {
@@ -930,12 +949,13 @@
       loader.classList.add("is-hidden");
       document.body.classList.remove("site-is-loading");
       document.body.style.overflow = "";
+      window.dispatchEvent(new CustomEvent("camilla:ready"));
     };
 
     document.body.classList.add("site-is-loading");
     document.body.style.overflow = "hidden";
 
-    const minTime = new Promise((resolve) => setTimeout(resolve, 4350));
+    const minTime = new Promise((resolve) => setTimeout(resolve, 2600));
     const pageReady = document.readyState === "complete"
       ? Promise.resolve()
       : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
@@ -945,7 +965,7 @@
     });
 
     // Never leave the site locked if an external animation/CDN is slow.
-    setTimeout(finish, 6500);
+    setTimeout(finish, 5200);
   }
 
   /* ============ INIT ============ */
