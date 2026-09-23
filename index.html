@@ -370,44 +370,10 @@
     </div>
   </div>
   <div class="toasts" aria-live="polite"></div>
-  <audio id="siteMusic" loop preload="auto" aria-hidden="true">
-    <source src="audio/echo-lounge.mp3" type="audio/mpeg" />
-  </audio>
+
 
 <script src="i18n.js"></script>
 <script src="app.js"></script>
-  <script>
-    (() => {
-      const loader = document.getElementById('siteLoader');
-      const music = document.getElementById('siteMusic');
-      music.volume = 0.28;
-      const playMusic = () => music.play().catch(() => {});
-      const stopMusic = () => {
-        music.pause();
-        music.currentTime = 0;
-      };
-
-      // Некоторые браузеры разрешают звук только после первого действия пользователя.
-      document.addEventListener('pointerdown', playMusic, { once: true, passive: true });
-      document.addEventListener('keydown', playMusic, { once: true });
-      window.addEventListener('pagehide', stopMusic);
-      window.addEventListener('beforeunload', stopMusic);
-
-      // 4.45 s показа + 0.55 s плавного исчезновения = 5 секунд всего.
-      window.setTimeout(() => {
-        let finished = false;
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          document.body.classList.remove('site-is-loading');
-          loader.remove();
-          playMusic();
-        };
-        loader.classList.add('is-hidden');
-        loader.addEventListener('transitionend', finish, { once: true });
-        window.setTimeout(finish, 600);
-      }, 4450);
-    })();
-  </script>
+  
 </body>
 </html>
