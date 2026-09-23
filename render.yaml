@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: camilla-beauty-studio
+    runtime: python
+    plan: free
+    buildCommand: "python -m compileall backend.py manage.py"
+    startCommand: "python manage.py runserver 0.0.0.0:$PORT"
+    envVars:
+      - key: CAMILLA_GOOGLE_CLIENT_ID
+        sync: false
+      - key: CAMILLA_SMTP_HOST
+        sync: false
+      - key: CAMILLA_SMTP_PORT
+        value: "465"
+      - key: CAMILLA_SMTP_USER
+        sync: false
+      - key: CAMILLA_SMTP_PASSWORD
+        sync: false
