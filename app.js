@@ -225,7 +225,7 @@
     const dot = $(".cursor-dot"), ring = $(".cursor-ring");
     let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y;
     // Было (из-за чего код падает, если элемента нет):
-document.querySelector('.my-element').style.display = 'block';
+
 
 // Стало (безопасно: код выполнится только тогда, когда элемент реально существует):
 const element = document.querySelector('.my-element');
