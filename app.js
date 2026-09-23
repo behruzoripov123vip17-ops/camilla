@@ -69,7 +69,7 @@
 
   /* ============ I18N ============ */
   let lang = localStorage.getItem("camilla_lang") || "ru";
-  if (!window.I18N[lang]) lang = "ru";
+  if (!window.I18N?.[lang]) lang = "ru";
   const t = (k) => (window.I18N[lang] && window.I18N[lang][k]) || window.I18N.ru[k] || k;
   const loc = () => ({ ru: "ru-RU", uz: "uz-UZ", en: "en-US" }[lang]);
 
