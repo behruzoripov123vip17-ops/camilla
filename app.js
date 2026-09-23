@@ -219,61 +219,32 @@
     });
   }
 
+  /* ============ CUSTOM CURSOR ============ */
   function cursor() {
-    if (RM || window.matchMedia("(pointer:fine)").matches) return;
-    const dot = document.querySelector(".cursor-dot");
-    const ring = document.querySelector(".cursor-ring");
+    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
+    const dot = $(".cursor-dot"), ring = $(".cursor-ring");
     if (!dot || !ring) return;
 
-    let x = innerWidth / 2, y = innerHeight / 2;
-    let rx = x, ry = y;
-
+    let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y;
     document.addEventListener("mousemove", (e) => {
-        x = e.clientX;
-        y = e.clientY;
-        dot.style.transform = `translate(${x}px, ${y}px)`;
-    });
+      x = e.clientX;
+      y = e.clientY;
+      dot.style.transform = "translate(" + x + "px," + y + "px)";
+    }, { passive: true });
 
-    (function loop() {
-        rx += (x - rx) * 0.14;
-        ry += (y - ry) * 0.14;
-        ring.style.transform = `translate(${rx}px, ${ry}px)`;
-        requestAnimationFrame(loop);
-    })();
+    const loop = () => {
+      rx += (x - rx) * 0.14;
+      ry += (y - ry) * 0.14;
+      ring.style.transform = "translate(" + rx + "px," + ry + "px)";
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
 
     document.addEventListener("mouseover", (e) => {
-        const hit = e.target.closest("a, button, chip, tr, [data-tilt]");
-        ring.classList.toggle("grow", !!hit);
+      const hit = e.target.closest("a,button,.chip,.tr,[data-tilt]");
+      ring.classList.toggle("grow", !!hit);
     });
-}
-
-function cursor() {
-    if (RM || window.matchMedia("(pointer:fine)").matches) return;
-    const dot = document.querySelector(".cursor-dot");
-    const ring = document.querySelector(".cursor-ring");
-    if (!dot || !ring) return;
-
-    let x = innerWidth / 2, y = innerHeight / 2;
-    let rx = x, ry = y;
-
-    document.addEventListener("mousemove", (e) => {
-        x = e.clientX;
-        y = e.clientY;
-        dot.style.transform = `translate(${x}px, ${y}px)`;
-    });
-
-    (function loop() {
-        rx += (x - rx) * 0.14;
-        ry += (y - ry) * 0.14;
-        ring.style.transform = `translate(${rx}px, ${ry}px)`;
-        requestAnimationFrame(loop);
-    })();
-
-    document.addEventListener("mouseover", (e) => {
-        const hit = e.target.closest("a, button, chip, tr, [data-tilt]");
-        ring.classList.toggle("grow", !!hit);
-    });
-}
+  }
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
     document.addEventListener("pointerdown", (e) => {
@@ -616,7 +587,7 @@ function cursor() {
       e.preventDefault(); $("#authError").textContent = "";
       const register = card.classList.contains("register");
       try {
-        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify({ name: $("#authName").value, email: $("#authEmail").value, password: $("#authPassword").value, language: lang }) });
+        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify({ name: $("#authName")?.value?.trim() || "", email: $("#authEmail").value.trim(), password: $("#authPassword").value, language: lang }) });
         currentUser = data.user; modal.classList.remove("on");
         if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); } else toast("Аккаунт готов — продолжите запись");
       } catch (err) { $("#authError").textContent = err.message; }
@@ -629,6 +600,56 @@ function cursor() {
     });
   }
 
+  /* ============ GOOGLE AUTH ============ */
+  async function initGoogleAuth() {
+    const host = $("#googleSignIn");
+    const hint = $("#googleAuthHint");
+    if (!host) return;
+
+    let clientId = "";
+    try { clientId = (await api("/api/auth/google/config")).client_id || ""; } catch (_) {}
+    if (!clientId) {
+      if (hint) {
+        hint.hidden = false;
+        hint.textContent = "Вход через Google пока не настроен владельцем сайта.";
+      }
+      return;
+    }
+
+    const render = () => {
+      if (!window.google?.accounts?.id) return false;
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response) => {
+          try {
+            const data = await api("/api/auth/google", {
+              method: "POST",
+              body: JSON.stringify({ credential: response.credential, language: lang })
+            });
+            currentUser = data.user;
+            $("#authModal")?.classList.remove("on");
+            toast(currentUser?.role === "ADMIN" ? "Вход выполнен: администратор" : "Вход через Google выполнен");
+          } catch (err) {
+            const error = $("#authError");
+            if (error) error.textContent = err.message;
+          }
+        }
+      });
+      host.innerHTML = "";
+      window.google.accounts.id.renderButton(host, {
+        type: "standard", theme: "outline", size: "large",
+        shape: "rectangular", width: Math.min(360, host.clientWidth || 360),
+        text: "continue_with"
+      });
+      return true;
+    };
+
+    if (render()) return;
+    let attempts = 0;
+    const timer = setInterval(() => {
+      if (render() || ++attempts >= 40) clearInterval(timer);
+    }, 250);
+  }
   function sparkles(host) {
     if (!host || RM) return;
     for (let i = 0; i < 26; i++) {
@@ -802,6 +823,7 @@ function cursor() {
     reel();
     lightbox();
     authEvents();
+    initGoogleAuth();
     events();
     loadUser();
     loadOccupiedBookings();
