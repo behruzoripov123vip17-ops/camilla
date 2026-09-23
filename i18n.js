@@ -213,7 +213,7 @@ window.I18N = {
     "book.name": "Your name", "book.contact": "Telegram or phone",
     "book.comment": "Comment (optional)",
     "book.errService": "Please choose a service", "book.errDate": "Please pick a date",
-    "book.errTime": "Please pick a time", "book.errName": "Please enter a phone number or Telegram @username",
+    "book.errTime": "Please pick a time", "book.errName": "Please enter your name", "book.errContact": "Enter a phone number or Telegram @username",
     "book.fridayNote": "\"Access Bars\" is available on Fridays only",
     "book.lDate": "Date", "book.lTime": "Time",
     "book.summary": "Your booking",
