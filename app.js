@@ -699,30 +699,53 @@
   function music() {
     const audio = $("#siteMusic"), toggle = $("#musicToggle");
     if (!audio || !toggle) return;
+
     let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
+    audio.volume = 0.34;
+
     const setState = (on) => {
       toggle.classList.toggle("playing", on);
       toggle.classList.toggle("muted", !on);
       toggle.setAttribute("aria-pressed", String(on));
       toggle.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
+      toggle.title = on ? "Выключить музыку" : "Включить музыку";
     };
-    audio.volume = 0.34;
+
     const play = () => {
       if (mutedByUser) return Promise.resolve(false);
-      return audio.play().then(() => { setState(true); return true; }).catch(() => { setState(false); return false; });
+      return audio.play()
+        .then(() => { setState(true); return true; })
+        .catch(() => { setState(false); return false; });
     };
-    const unlock = () => { play(); };
+
     toggle.addEventListener("click", () => {
-      if (audio.paused) { mutedByUser = false; localStorage.removeItem("camilla_music_off"); play(); }
-      else { mutedByUser = true; localStorage.setItem("camilla_music_off","1"); audio.pause(); setState(false); }
+      if (audio.paused) {
+        mutedByUser = false;
+        localStorage.removeItem("camilla_music_off");
+        play();
+      } else {
+        mutedByUser = true;
+        localStorage.setItem("camilla_music_off", "1");
+        audio.pause();
+        setState(false);
+      }
     });
-    window.addEventListener("camilla:ready", () => { setTimeout(play, 120); }, { once: true });
-    ["pointerdown","keydown","touchstart"].forEach((event) => document.addEventListener(event, unlock, { once: true, passive: true }));
+
+    // The real page is ready now. Try audible autoplay immediately after load.
+    const onPageLoaded = () => setTimeout(play, 180);
+    if (document.readyState === "complete") onPageLoaded();
+    else window.addEventListener("load", onPageLoaded, { once: true });
+
+    // Browser autoplay policies may require one user interaction.
+    ["pointerdown", "keydown", "touchstart"].forEach((event) => {
+      document.addEventListener(event, () => { if (audio.paused && !mutedByUser) play(); }, { once: true, passive: true });
+    });
+
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) audio.pause();
       else if (!mutedByUser) play();
     });
-    addEventListener("pagehide", () => { audio.pause(); audio.currentTime = 0; }, { once: true });
+
     setState(false);
   }
 
@@ -942,30 +965,10 @@
 
   /* ============ SITE LOADER ============ */
   function siteLoader() {
-    const loader = $("#siteLoader");
-    if (!loader) return;
-
-    const finish = () => {
-      loader.classList.add("is-hidden");
-      document.body.classList.remove("site-is-loading");
-      document.body.style.overflow = "";
-      window.dispatchEvent(new CustomEvent("camilla:ready"));
-    };
-
-    document.body.classList.add("site-is-loading");
-    document.body.style.overflow = "hidden";
-
-    const minTime = new Promise((resolve) => setTimeout(resolve, 2600));
-    const pageReady = document.readyState === "complete"
-      ? Promise.resolve()
-      : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
-
-    Promise.all([minTime, pageReady]).then(() => {
-      requestAnimationFrame(() => requestAnimationFrame(finish));
-    });
-
-    // Never leave the site locked if an external animation/CDN is slow.
-    setTimeout(finish, 5200);
+    // The old blocking splash screen was removed. The website opens immediately.
+    document.body.classList.remove("site-is-loading");
+    document.body.style.overflow = "";
+    window.dispatchEvent(new CustomEvent("camilla:ready"));
   }
 
   /* ============ INIT ============ */
