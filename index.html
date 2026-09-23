@@ -83,7 +83,7 @@
         <button class="lang-btn" data-lang="en">EN</button>
       </div>
       <a class="btn btn-primary btn-sm magnet" href="#booking" data-i18n="cta.book">Забронировать место</a>
-      <button id="accountBtn" class="btn btn-ghost btn-sm" type="button" aria-label="Гостевой режим — создать аккаунт или войти" title="Гостевой режим"><img src="images/account-icon-24.png" alt="Аккаунт" style="width: 20px; height: 20px; filter: invert(1); opacity: 0.8;"></button>
+      <button id="accountBtn" class="account-button btn btn-ghost btn-sm" type="button" aria-label="Аккаунт" title="Аккаунт"><img src="images/account-icon-24.png" alt="" width="20" height="20"></button>
       <button id="burger" class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
     </div>
   </header>
@@ -337,9 +337,13 @@
       <p class="eyebrow small"><span class="line"></span><span>CAMILLA ACCOUNT</span></p>
       <h3 id="authTitle">Создать аккаунт</h3>
       <p id="authHint" class="auth-hint">Сейчас вы в гостевом режиме. Зарегистрируйтесь по email и паролю, чтобы сохранять записи.</p>
-      <form id="authForm">
-        <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" required></label>
-        <label><span>Пароль</span><input id="authPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+      <form id="authForm" novalidate>
+        <label class="auth-name-field"><span>Имя и фамилия *</span><input id="authName" type="text" autocomplete="name" minlength="2" maxlength="60" placeholder="Например, Алиса Каримова"></label>
+        <label class="auth-phone-field"><span>Телефон *</span><input id="authPhone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+998 90 123 45 67"></label>
+        <label><span>Email *</span><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label><span>Пароль *</span><input id="authPassword" type="password" minlength="10" autocomplete="new-password" required placeholder="Минимум 10 символов"></label>
+        <label class="auth-confirm-field"><span>Повторите пароль *</span><input id="authPasswordConfirm" type="password" minlength="10" autocomplete="new-password" required placeholder="Повторите пароль"></label>
+        <label class="auth-consent"><input id="authConsent" type="checkbox" required><span>Я согласен(на) с условиями использования сайта.</span></label>
         <button id="authSubmit" class="btn btn-primary" type="submit">Зарегистрироваться</button>
       </form>
       <p id="authError" class="auth-error" role="alert"></p>
@@ -369,6 +373,8 @@
       <button id="profileLogout" class="auth-switch" type="button">Выйти из аккаунта</button>
     </div>
   </div>
+  <audio id="siteMusic" src="audio/echo-lounge.mp3" preload="auto" loop playsinline></audio>
+  <button id="musicToggle" class="music-toggle" type="button" aria-label="Музыка" title="Музыка"><span class="music-icon">♫</span><span class="music-bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
   <div class="toasts" aria-live="polite"></div>
 
 
