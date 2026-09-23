@@ -38,18 +38,6 @@
   </script>
 </head>
 <body class="site-is-loading">
-  <div id="siteLoader" class="site-loader" role="status" aria-live="polite" aria-label="Загрузка сайта">
-    <div class="site-loader-grid" aria-hidden="true"></div>
-    <div class="site-loader-brand" aria-hidden="true">
-      <span class="site-loader-kanji">美</span>
-      <span class="site-loader-word">CAMILLA<small>BEAUTY STUDIO</small></span>
-    </div>
-    <div class="site-loader-main">
-      <dotlottie-player src="https://lottie.host/ef1c4cb0-fa61-4656-a1b0-9ff837b99ae2/g8EkmOcmO0.lottie" background="transparent" speed="1" loop autoplay aria-label="Анимация загрузки"></dotlottie-player>
-    </div>
-    <div class="site-loader-caption" aria-hidden="true"><span></span>CAMILLA<span></span></div>
-    <div class="site-loader-progress" aria-hidden="true"><i></i></div>
-  </div>
   <div class="progress" aria-hidden="true"><i></i></div>
   <div id="brushCursor" class="brush-cursor" aria-hidden="true">
     <svg viewBox="0 0 64 64" class="brush-svg" focusable="false">
@@ -352,7 +340,8 @@
       </form>
       <p id="authError" class="auth-error" role="alert"></p>
       <div class="auth-divider"><span>или</span></div>
-      <div id="googleSignIn" class="google-sign-in" aria-label="Войти через Google"></div>
+      <div class="google-continue-label">Продолжить с Google</div>
+      <div id="googleSignIn" class="google-sign-in" aria-label="Продолжить с Google"></div>
       <p id="googleAuthHint" class="auth-hint google-auth-hint" hidden></p>
       <button id="authSwitch" class="auth-switch" type="button">У меня уже есть аккаунт</button>
     </div>
