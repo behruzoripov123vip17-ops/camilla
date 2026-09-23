@@ -816,6 +816,7 @@
     observeReveals(document);
     counters();
     cursor();
+    brushCursor();
     ripple();
     magnetic();
     tilt();
