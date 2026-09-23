@@ -625,7 +625,11 @@
     if (!modal) return;
     $("#accountBtn")?.addEventListener("click", () => {
       if (currentUser?.role === "ADMIN") return showAdmin();
-      if (currentUser) return toast(`${currentUser.name} · аккаунт активен`);
+      if (currentUser) {
+        const profile = $("#profileModal");
+        if (profile) { profile.classList.add("on"); profile.setAttribute("aria-hidden", "false"); loadProfile(); }
+        return;
+      }
       showAuth();
     });
     $("#authClose").addEventListener("click", () => modal.classList.remove("on"));
@@ -636,14 +640,39 @@
       $("#authSubmit").textContent = register ? "Зарегистрироваться" : "Войти";
       $("#authSwitch").textContent = register ? "У меня уже есть аккаунт" : "Создать аккаунт";
       $("#authPassword").autocomplete = register ? "new-password" : "current-password";
+      $("#authPhone")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      $("#authPasswordConfirm")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      $("#authConsent")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
     });
     form.addEventListener("submit", async (e) => {
-      e.preventDefault(); $("#authError").textContent = "";
+      e.preventDefault();
+      $("#authError").textContent = "";
       const register = card.classList.contains("register");
+      const email = $("#authEmail").value.trim();
+      const password = $("#authPassword").value;
+      const name = $("#authName")?.value?.trim() || "";
+      const phone = $("#authPhone")?.value?.trim() || "";
+      const confirm = $("#authPasswordConfirm")?.value || "";
+      const consent = $("#authConsent")?.checked !== false;
+      if (register) {
+        if (!/^[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳІіЇї\s'-]{2,60}$/.test(name)) return ($("#authError").textContent = "Введите настоящее имя и фамилию.");
+        if (!/^\+?[0-9\s()\-]{9,20}$/.test(phone)) return ($("#authError").textContent = "Введите корректный номер телефона.");
+        if (!/^\S+@\S+\.\S+$/.test(email)) return ($("#authError").textContent = "Введите корректный email.");
+        if (password.length < 10 || !/[A-Za-zА-Яа-я]/.test(password) || !/[0-9]/.test(password)) return ($("#authError").textContent = "Пароль: минимум 10 символов, буквы и цифры.");
+        if (password !== confirm) return ($("#authError").textContent = "Пароли не совпадают.");
+        if (!consent) return ($("#authError").textContent = "Подтвердите согласие с условиями.");
+      } else if (!email || !password) {
+        return ($("#authError").textContent = "Введите email и пароль.");
+      }
       try {
-        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify({ name: $("#authName")?.value?.trim() || "", email: $("#authEmail").value.trim(), password: $("#authPassword").value, language: lang }) });
-        currentUser = data.user; modal.classList.remove("on");
-        if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); } else toast("Аккаунт готов — продолжите запись");
+        const payload = register
+          ? { name, phone, email, password, language: lang }
+          : { email, password, language: lang };
+        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
+        currentUser = data.user;
+        modal.classList.remove("on");
+        if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
+        else toast(register ? "Аккаунт создан — продолжите запись" : "Вход выполнен");
       } catch (err) { $("#authError").textContent = err.message; }
     });
     $("#adminClose")?.addEventListener("click", () => $("#adminModal").classList.remove("on"));
@@ -652,6 +681,35 @@
       try { await api("/api/admin/bookings/status", { method: "POST", body: JSON.stringify({ id: Number(button.dataset.bookingId), status: button.dataset.adminStatus }) }); toast("Статус записи обновлён"); showAdmin(); loadOccupiedBookings(); }
       catch (err) { toast(err.message); }
     });
+  }
+
+  async function loadProfile() {
+    const list = $("#profileBookings");
+    if (!list) return;
+    list.innerHTML = "<p class=\"muted\">Загружаем ваши записи…</p>";
+    try {
+      const { bookings } = await api("/api/bookings");
+      list.innerHTML = bookings.length ? bookings.map((b) => `<article class="admin-booking"><b>${esc(b.service_name)}</b><span>${esc(b.starts_at.replace("T", " "))}–${esc(b.ends_at.slice(11, 16))}</span><small>${esc(b.status)} · ${esc(b.contact || "")}</small></article>`).join("") : "<p class=\"muted\">Записей пока нет.</p>";
+    } catch (err) { list.innerHTML = `<p class="auth-error">${esc(err.message)}</p>`; }
+  }
+
+  function music() {
+    const audio = $("#siteMusic"), toggle = $("#musicToggle");
+    if (!audio || !toggle) return;
+    const setState = (on) => {
+      toggle.classList.toggle("playing", on);
+      toggle.setAttribute("aria-pressed", String(on));
+    };
+    const play = () => audio.play().then(() => setState(true)).catch(() => setState(false));
+    const unlock = () => { play(); };
+    audio.volume = 0.42;
+    toggle.addEventListener("click", () => {
+      if (audio.paused) play(); else { audio.pause(); setState(false); }
+    });
+    ["pointerdown","keydown","touchstart"].forEach((event) => document.addEventListener(event, unlock, { once: true, passive: true }));
+    addEventListener("load", play, { once: true });
+    addEventListener("pagehide", () => { audio.pause(); audio.currentTime = 0; }, { once: true });
+    setTimeout(play, 120);
   }
 
   /* ============ GOOGLE AUTH ============ */
@@ -906,6 +964,7 @@
     scrollFx();
     reel();
     lightbox();
+    music();
     authEvents();
     initGoogleAuth();
     events();
