@@ -514,3 +514,38 @@ footer{border-top:1px solid var(--line);margin-top:40px}
 .music-toggle.playing .music-icon{display:none}.music-toggle.playing .music-bars{display:flex}
 @keyframes musicbar{to{height:14px}}
 @media(max-width:700px){.music-toggle{right:14px;bottom:82px}.auth-card{padding:26px 20px}}
+
+/* ---------- final CAMILLA interaction polish ---------- */
+.brush-cursor{width:34px;height:34px;transform-origin:18px 18px}
+.brush-svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 7px 10px rgba(0,0,0,.38))}
+.brush-handle{fill:#f4e7d5;stroke:#7c3aed;stroke-width:1.4}
+.brush-metal{fill:#d8dbe7;stroke:#7c3aed;stroke-width:1.2}
+.brush-bristle{fill:#a855f7;stroke:#f5d0fe;stroke-width:1}
+.brush-shine{fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;opacity:.8}
+.brush-cursor.hover .brush-bristle{fill:#c4b5fd}
+html,body{cursor:none!important}
+a,button,input,select,textarea,.chip,.tab,.tr{cursor:none!important}
+.account-button{width:42px;height:42px;min-width:42px;padding:0!important;display:grid!important;place-items:center;border:1px solid var(--line2)!important;border-radius:50%!important;background:linear-gradient(145deg,rgba(139,92,246,.18),rgba(28,15,41,.72))!important;box-shadow:0 8px 24px rgba(0,0,0,.25),inset 0 0 0 1px rgba(255,255,255,.025);transition:transform .3s var(--spring),border-color .3s,box-shadow .3s}
+.account-button img{width:22px;height:22px;display:block;opacity:1!important;filter:none!important}
+.account-button:hover{transform:translateY(-2px) scale(1.05);border-color:var(--acc2)!important;box-shadow:0 12px 30px rgba(124,58,237,.3)}
+.google-sign-in{min-height:44px;display:flex;justify-content:center;align-items:center;width:100%;overflow:hidden}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.18em}
+.auth-divider:before,.auth-divider:after{content:"";height:1px;flex:1;background:var(--line)}
+.google-auth-hint{margin-top:8px;text-align:center}
+.booking-contact-form{display:grid;gap:18px}
+.booking-form-intro{display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.form-step-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--acc3),var(--acc));font-family:var(--disp);font-size:12px;color:#fff;box-shadow:0 10px 28px rgba(124,58,237,.3)}
+.booking-form-intro h4{font-family:var(--disp);font-size:15px;margin-bottom:4px}
+.booking-form-intro p{color:var(--muted);font-size:12px}
+.booking-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field-card{display:grid;gap:8px!important}
+.field-card span{font-size:11px!important;color:var(--acc2)!important;text-transform:uppercase;letter-spacing:.13em}
+.field-card input,.field-card textarea{width:100%;border:1px solid var(--line2);border-radius:14px;background:rgba(10,5,16,.5);color:var(--ink);padding:14px 15px;font:inherit;outline:none;transition:border-color .25s,box-shadow .25s,transform .25s}
+.field-card textarea{resize:vertical;min-height:105px}
+.field-card input:focus,.field-card textarea:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(139,92,246,.12);transform:translateY(-1px)}
+.booking-privacy{display:flex;align-items:center;gap:9px;color:var(--faint);font-size:11px;padding:10px 12px;border-radius:12px;background:rgba(139,92,246,.06)}
+.privacy-dot{width:7px;height:7px;border-radius:50%;background:#8ee0bd;box-shadow:0 0 12px rgba(142,224,189,.7)}
+.music-toggle{border-color:rgba(196,181,253,.35)}
+.music-toggle.muted{opacity:.75}
+.site-loader-caption{bottom:106px}
+@media(max-width:760px){.booking-form-grid{grid-template-columns:1fr}.account-button{width:40px;height:40px;min-width:40px}}
