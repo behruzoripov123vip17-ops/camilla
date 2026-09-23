@@ -474,7 +474,7 @@ footer{border-top:1px solid var(--line);margin-top:40px}
 /* ============ BRUSH CURSOR — local recording ============ */
 .brush-cursor{
   position:fixed;left:0;top:0;z-index:10001;
-  width:58px;height:58px;pointer-events:none;
+  width:32px;height:32px;pointer-events:none;
   opacity:0;transform:translate3d(-100px,-100px,0);
   will-change:transform,opacity;transition:opacity .18s ease,filter .2s ease;
 }
@@ -490,3 +490,27 @@ footer{border-top:1px solid var(--line);margin-top:40px}
   a,button,input,select,textarea{cursor:none}
 }
 @media(pointer:coarse){.brush-cursor{display:none!important}}
+
+
+/* ---------- account + music polish ---------- */
+.auth-field-hidden{display:none!important}
+.auth-card.register .auth-field-hidden{display:grid!important}
+.auth-name-field{display:none!important}
+.auth-card.register .auth-name-field{display:grid!important}
+.auth-confirm-field{display:none!important}
+.auth-card.register .auth-confirm-field{display:grid!important}
+.auth-consent{display:none!important;grid-template-columns:auto 1fr!important;align-items:start;gap:9px!important}
+.auth-card.register .auth-consent{display:grid!important}
+.auth-consent input{width:16px!important;margin-top:3px}
+.auth-hint{color:var(--muted);font-size:12px;line-height:1.6}
+.auth-card{background:linear-gradient(145deg,rgba(36,19,53,.96),rgba(16,8,24,.98));box-shadow:0 35px 100px rgba(0,0,0,.55),0 0 60px rgba(139,92,246,.12)}
+.auth-card input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(139,92,246,.14)}
+.music-toggle{position:fixed;right:22px;bottom:22px;z-index:300;display:flex;align-items:center;gap:7px;width:48px;height:48px;justify-content:center;border:1px solid var(--line2);border-radius:50%;background:rgba(20,9,30,.78);backdrop-filter:blur(14px);box-shadow:0 10px 35px rgba(0,0,0,.35);transition:transform .35s var(--spring),border-color .3s,background .3s}
+.music-toggle:hover{transform:translateY(-4px) scale(1.06);border-color:var(--acc)}
+.music-icon{font-size:19px;color:var(--acc2);line-height:1}
+.music-bars{display:none;gap:2px;height:15px;align-items:end}
+.music-bars i{display:block;width:2px;height:6px;background:var(--acc2);border-radius:2px;animation:musicbar .7s ease-in-out infinite alternate}
+.music-bars i:nth-child(2){height:12px;animation-delay:-.25s}.music-bars i:nth-child(3){height:8px;animation-delay:-.45s}
+.music-toggle.playing .music-icon{display:none}.music-toggle.playing .music-bars{display:flex}
+@keyframes musicbar{to{height:14px}}
+@media(max-width:700px){.music-toggle{right:14px;bottom:82px}.auth-card{padding:26px 20px}}
