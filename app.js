@@ -236,8 +236,8 @@ if (element) {
     // (function loop() {
     //   rx += (x - rx) * 0.14; ry += (y - ry) * 0.14;
     //   ring.style.transform = `translate(${rx}px,${ry}px)`;
-      requestAnimationFrame(loop);
-    })();
+    //   requestAnimationFrame(loop);
+    // })();
     document.addEventListener("mouseover", (e) => {
       const hit = e.target.closest("a,button,.chip,.tr,[data-tilt]");
       ring.classList.toggle("grow", !!hit);
