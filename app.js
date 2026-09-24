@@ -8,7 +8,8 @@
     telegram: "shahloNailSTUDIO",               // Telegram username
     instagramURL: "https://www.instagram.com/shakhlo_nails",
     telegramURL: "https://t.me/shahloNailSTUDIO",
-    tz: "Asia/Tashkent"
+    tz: "Asia/Tashkent",
+    apiBase: (document.querySelector('meta[name="camilla-api"]')?.content || window.CAMILLA_API_BASE || "").replace(/\/$/, "")
   };
   window.CAMILLA_CONFIG = CONFIG;
 
@@ -405,8 +406,15 @@
   let currentUser = null;
 
   async function api(path, options = {}) {
-    const res = await fetch(path, { headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options });
-    const data = res.status === 204 ? {} : await res.json();
+    const base = CONFIG.apiBase || "";
+    const url = base ? base + path : path;
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    const res = await fetch(url, { credentials: "include", ...options, headers });
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) {
+      throw new Error(res.ok ? "Сервер вернул некорректный ответ" : "Сервер недоступен");
+    }
     if (!res.ok) throw new Error(data.error || "Request failed");
     return data;
   }
@@ -480,70 +488,112 @@
   function renderBookingStep() {
     const panel = $("#bookPanels");
     if (!panel) return;
+
     $$(".step-dot").forEach((d) => {
       const n = +d.dataset.step;
       d.classList.toggle("on", n === B.step);
       d.classList.toggle("done", n < B.step);
     });
+
     $("#bookNext").style.display = B.step === 5 ? "none" : "";
     $("#bookBack").style.display = B.step === 1 ? "none" : "";
     $("#bookStepTitle").textContent = t("book.s" + B.step);
     $("#bookStepNo").textContent = String(B.step).padStart(2, "0");
 
     if (B.step === 1) {
-      panel.innerHTML = `<p class="booking-hint">Маникюр, педикюр и Access Bars занимают 2 часа. Для депиляции показывается её точная длительность.</p><div class="selected-total"><b>${B.services.length ? `Выбрано: ${B.services.length} · ${fmtDur(serviceById(B.services[0]).dur)}` : "Пока ничего не выбрано"}</b><span>${nf(totalPrice())} сум</span></div><div class="chips anim">${CATS.map((c) => `
-        <div class="chip-group"><h4>${t("cat." + c.id)}</h4><div class="chip-row">
-        ${SERVICES.filter((s) => s.cat === c.id).map((s) => `
-          <button class="chip ${B.services.includes(s.id) ? "on" : ""}" data-pick-service="${s.id}">
-            <b>${s.name[lang]}</b><span>${fmtPrice(s.price)}</span>
-          </button>`).join("")}
-        </div></div>`).join("")}</div>`;
+      panel.innerHTML = `
+        <div class="booking-stage-head">
+          <div><span class="stage-kicker">01 / SERVICE</span><h4>Выберите одну услугу</h4><p>Выберите процедуру — цена и длительность появятся сразу.</p></div>
+          <div class="booking-total"><span>Стоимость</span><b>${B.services.length ? nf(totalPrice()) + " сум" : "—"}</b></div>
+        </div>
+        <div class="booking-service-grid">
+          ${SERVICES.map((s) => `
+            <button type="button" class="booking-service-card ${B.services.includes(s.id) ? "is-selected" : ""}" data-pick-service="${s.id}">
+              <span class="booking-service-index">${s.id.toUpperCase()}</span>
+              ${s.img ? `<img src="images/${s.img}.jpg" alt="" loading="lazy">` : `<span class="booking-service-art">${s.cat === "d" ? "01" : s.cat === "p" ? "02" : "03"}</span>`}
+              <span class="booking-service-body"><small>${t("cat." + s.cat)}${s.friday ? " · FRIDAY" : ""}</small><strong>${s.name[lang]}</strong><em>${fmtDur(s.dur)} · ${fmtPrice(s.price)}</em></span>
+              <span class="booking-check">${B.services.includes(s.id) ? "✓" : "+"}</span>
+            </button>`).join("")}
+        </div>`;
     }
+
     if (B.step === 2) {
       const svc = serviceById(B.services[0]);
       panel.innerHTML = `
-        <div class="date-grid anim">${dates().map((d) => {
-          // Keep the Tashkent calendar date; toISOString() would shift it in another timezone.
-          // Friday is reserved for Access Bars; other services are available on the remaining days.
-          const iso = isoDate(d), fri = d.getDay() === 5, dis = svc && (svc.friday ? !fri : fri);
-          const wd = d.toLocaleDateString(loc(), { weekday: "short" });
-          const mo = d.toLocaleDateString(loc(), { month: "short" });
-          return `<button ${dis ? "disabled" : ""} class="chip date ${B.date === iso ? "on" : ""} ${dis ? "dis" : ""}" data-pick-date="${iso}">
-            <span class="wd">${wd}</span><b>${d.getDate()}</b><span class="mo">${mo}</span>
-          </button>`;
-        }).join("")}</div>`;
+        <div class="booking-stage-head">
+          <div><span class="stage-kicker">02 / DATE</span><h4>Выберите дату</h4><p>Показываются только даты, доступные для выбранной услуги.</p></div>
+          <div class="booking-selected-pill">${svc ? esc(svc.name[lang]) : "Услуга не выбрана"}</div>
+        </div>
+        <div class="booking-date-grid">
+          ${dates().map((d) => {
+            const iso = isoDate(d), fri = d.getDay() === 5, dis = svc && (svc.friday ? !fri : fri);
+            const wd = d.toLocaleDateString(loc(), { weekday: "short" });
+            const mo = d.toLocaleDateString(loc(), { month: "short" });
+            return `<button type="button" ${dis ? "disabled" : ""} class="booking-date-card ${B.date === iso ? "is-selected" : ""} ${dis ? "is-disabled" : ""}" data-pick-date="${iso}">
+              <span>${wd}</span><b>${d.getDate()}</b><small>${mo}</small>
+            </button>`;
+          }).join("")}
+        </div>`;
     }
+
     if (B.step === 3) {
       const d = B.date ? new Date(B.date + "T12:00:00") : null;
-      panel.innerHTML = d ? `<div class="time-grid anim">${slotsFor(d).map((s) =>
-        `<button class="chip time ${B.time === timeLabel(s) ? "on" : ""}" data-pick-time="${timeLabel(s)}">${timeLabel(s)}–${timeLabel(s + totalMinutes())}</button>`).join("") || '<p class="empty">На эту дату свободного времени нет.</p>'}</div>`
-        : `<p class="empty">${t("book.errDate")}</p>`;
+      const slots = d ? slotsFor(d) : [];
+      panel.innerHTML = `
+        <div class="booking-stage-head">
+          <div><span class="stage-kicker">03 / TIME</span><h4>Выберите свободное время</h4><p>Занятые интервалы автоматически скрываются.</p></div>
+          <div class="booking-selected-pill">${B.date || "Дата не выбрана"}</div>
+        </div>
+        <div class="booking-time-grid">
+          ${slots.length ? slots.map((s) => `<button type="button" class="booking-time-card ${B.time === timeLabel(s) ? "is-selected" : ""}" data-pick-time="${timeLabel(s)}"><b>${timeLabel(s)}</b><span>${timeLabel(s + totalMinutes())}</span><small>Свободно</small></button>`).join("") : '<div class="booking-empty">На эту дату нет подходящего свободного времени.</div>'}
+        </div>
+        <div class="booking-hours-note"><span>09:00–18:00</span><i></i><span>перерыв 12:00–13:00</span></div>`;
     }
+
     if (B.step === 4) {
-      panel.innerHTML = `<div class="booking-contact-form anim"><div class="booking-form-intro"><span class="form-step-mark">04</span><div><h4>${t("book.s4")}</h4><p>Оставьте данные, чтобы студия могла подтвердить запись.</p></div></div><div class="booking-form-grid"><label class="field-card"><span>${t("book.name")} *</span><input id="bName" autocomplete="name" value="${esc(B.name)}" placeholder="Ваше имя и фамилия"></label><label class="field-card"><span>${t("book.contact")} *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label></div><label class="field-card field-wide"><span>${t("book.comment")}</span><textarea id="bComment" rows="4" placeholder="Например: хочу нежный дизайн или есть пожелания по времени">${esc(B.comment)}</textarea></label><div class="booking-privacy"><span class="privacy-dot"></span><span>Контактные данные нужны только для подтверждения записи.</span></div></div>`;
+      panel.innerHTML = `
+        <div class="booking-stage-head">
+          <div><span class="stage-kicker">04 / CONTACT</span><h4>Ваши контакты</h4><p>Оставьте настоящие контактные данные для подтверждения записи.</p></div>
+          <div class="form-step-mark">04</div>
+        </div>
+        <div class="booking-contact-form">
+          <div class="booking-form-grid">
+            <label class="field-card"><span>Имя и фамилия *</span><input id="bName" autocomplete="name" value="${esc(B.name)}" placeholder="Например, Алиса Каримова"></label>
+            <label class="field-card"><span>Телефон или Telegram *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label>
+          </div>
+          <label class="field-card field-wide"><span>Комментарий</span><textarea id="bComment" rows="4" placeholder="Дополнительные пожелания (необязательно)">${esc(B.comment)}</textarea></label>
+          <div class="booking-privacy"><span class="privacy-dot"></span><span>Данные используются только для подтверждения записи.</span></div>
+        </div>`;
     }
+
     if (B.step === 5) {
-      const svc = serviceById(B.services[0]);
       const d = new Date(B.date + "T12:00:00");
-      panel.innerHTML = `<div class="summary anim">
-        <h4>${t("book.summary")}</h4>
-        <ul>
-          <li><span>${t("serv.c.service")}</span><b>${selectedServices().map((s) => s.name[lang]).join(", ") || "—"}</b></li>
-          <li><span>${t("serv.c.price")}</span><b>${nf(totalPrice())} сум · ${Math.floor(totalMinutes()/60)} ч ${totalMinutes()%60 ? totalMinutes()%60 + " мин" : ""}</b></li>
-          <li><span>${t("book.lDate")}</span><b>${d.toLocaleDateString(loc(), { weekday: "long", day: "numeric", month: "long" })}</b></li>
-          <li><span>${t("book.lTime")}</span><b>${B.time}</b></li>
-          <li><span>${t("book.name")}</span><b>${esc(B.name)}</b></li>
-          ${B.contact ? `<li><span>${t("book.contact")}</span><b>${esc(B.contact)}</b></li>` : ""}
-          ${B.comment ? `<li><span>${t("book.comment")}</span><b>${esc(B.comment)}</b></li>` : ""}
-          <li class="booking-number"><span>Номер записи</span><b>#${bookingNumber()}</b></li>
-        </ul>
-        <div class="booking-contact"><span>Можете связаться с помощью этого телефона</span><a href="tel:941215444">941215444</a></div>
-      </div>`;
-      sparkles($(".summary"));
+      panel.innerHTML = `
+        <div class="booking-final">
+          <div class="booking-final-mark">✓</div>
+          <span class="stage-kicker">05 / CONFIRM</span>
+          <h4>Проверьте запись</h4>
+          <p class="booking-final-sub">Всё готово. Перед отправкой проверьте дату, время и контакт.</p>
+          <div class="booking-summary-grid">
+            <div><span>Услуга</span><b>${esc(selectedServices().map((s) => s.name[lang]).join(", ") || "—")}</b></div>
+            <div><span>Дата</span><b>${d.toLocaleDateString(loc(), { weekday: "long", day: "numeric", month: "long" })}</b></div>
+            <div><span>Время</span><b>${esc(B.time || "—")}</b></div>
+            <div><span>Стоимость</span><b>${nf(totalPrice())} сум</b></div>
+            <div><span>Клиент</span><b>${esc(B.name)}</b></div>
+            <div><span>Контакт</span><b>${esc(B.contact)}</b></div>
+          </div>
+          <div class="booking-final-actions">
+            <button class="btn btn-primary" id="sendTg" type="button">Подтвердить и сохранить</button>
+            <button class="btn btn-ghost" id="copyMsg" type="button">Скопировать детали</button>
+          </div>
+          <p class="booking-final-note">После сохранения запись появится в вашем аккаунте.</p>
+        </div>`;
+        sparkles($(".booking-final"));
     }
+
     observeReveals(panel);
-    renderWeekSchedule();
   }
+
 
   function esc(s) { return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
@@ -911,20 +961,30 @@
       }
       if (e.target.closest("#sendTg")) {
         if (!currentUser) return showAuth();
+        if (!B.services.length || !B.date || !B.time || !B.name || !validContact(B.contact)) {
+          return shake("#bookPanels", "Проверьте данные записи");
+        }
         const startMinutes = Number(B.time.slice(0, 2)) * 60 + Number(B.time.slice(3, 5));
         const endTime = timeLabel(startMinutes + totalMinutes());
-        localStorage.setItem("camilla_last_booking", JSON.stringify({ date: B.date, time: B.time, services: B.services, name: B.name, number: bookingNumber(), contact: B.contact }));
-        api("/api/bookings", { method: "POST", body: JSON.stringify({ specialist_id: 1, service_id: B.services[0], starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`, contact: B.contact, notes: B.comment }) })
-          .then(() => { navigator.clipboard.writeText(bookingMessage()).catch(() => {}); loadOccupiedBookings(); toast("Запись сохранена"); window.open(CONFIG.telegramURL, "_blank", "noopener"); })
-          .catch((err) => toast(err.message));
+        const button = e.target.closest("#sendTg");
+        button.disabled = true;
+        button.textContent = "Сохраняем…";
+        api("/api/bookings", { method: "POST", body: JSON.stringify({
+          specialist_id: 1, service_id: B.services[0],
+          starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`,
+          contact: B.contact, notes: B.comment
+        })})
+          .then(() => {
+            localStorage.setItem("camilla_last_booking", JSON.stringify({date:B.date,time:B.time,services:B.services,name:B.name,number:bookingNumber(),contact:B.contact}));
+            navigator.clipboard.writeText(bookingMessage()).catch(() => {});
+            loadOccupiedBookings();
+            toast("Запись сохранена");
+            window.open(CONFIG.telegramURL, "_blank", "noopener");
+          })
+          .catch((err) => { button.disabled = false; button.textContent = "Подтвердить и сохранить"; toast(err.message); });
         return;
       }
-      if (e.target.closest("#sendIg")) {
-        if (!currentUser) return showAuth();
-        navigator.clipboard.writeText(bookingMessage()).catch(() => {});
-        toast(t("book.copied"));
-        return;
-      }
+
 
       /* burger */
       if (e.target.closest("#burger")) {
