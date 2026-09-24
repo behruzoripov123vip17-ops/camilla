@@ -658,3 +658,74 @@ html, body { cursor: none; }
   .google-continue-label{font-size:10px}
   .book-card{border-radius:22px}
 }
+
+
+/* ===== CAMILLA loader: photo only, no loading message ===== */
+body.site-is-loading{overflow:hidden!important}
+body.site-is-loading> :not(#siteLoader){visibility:hidden!important}
+#siteLoader.site-loader{
+  position:fixed;inset:0;z-index:10000;
+  display:grid;place-items:center;overflow:hidden;
+  background:#09050f;
+  opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .65s ease,visibility .65s ease;
+}
+#siteLoader.site-loader.is-hidden{
+  opacity:0;visibility:hidden;pointer-events:none;
+}
+.site-loader-image{
+  position:absolute;inset:0;
+  display:grid;place-items:center;
+}
+.site-loader-image::after{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(9,5,15,.2),rgba(9,5,15,.52)),
+    radial-gradient(circle at center,transparent 25%,rgba(9,5,15,.42) 100%);
+}
+.site-loader-image img{
+  width:100%;height:100%;object-fit:cover;
+  display:block;
+  filter:saturate(.9) brightness(.78);
+  transform:scale(1.02);
+  animation:camillaLoaderPhoto 3.8s ease-in-out infinite alternate;
+}
+.site-loader-brand{
+  position:relative;z-index:2;
+  display:flex;align-items:center;gap:12px;
+  color:#fff;font-family:var(--disp);font-size:18px;font-weight:800;
+  letter-spacing:.14em;text-shadow:0 4px 24px rgba(0,0,0,.5);
+}
+.site-loader-brand small{
+  display:block;font-family:var(--body);font-size:8px;font-weight:500;
+  letter-spacing:.35em;color:rgba(255,255,255,.7);margin-top:5px;
+}
+.site-loader-kanji{
+  width:46px;height:46px;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.45);border-radius:13px;
+  background:rgba(20,9,30,.45);backdrop-filter:blur(10px);
+  font-family:var(--jp);font-size:26px;color:#e9ddff;
+}
+.site-loader-progress{
+  position:absolute;z-index:3;left:50%;bottom:55px;
+  transform:translateX(-50%);
+  width:min(280px,52vw);height:2px;
+  background:rgba(255,255,255,.2);overflow:hidden;
+}
+.site-loader-progress i{
+  display:block;width:100%;height:100%;
+  transform-origin:left center;
+  background:linear-gradient(90deg,var(--acc3),var(--pink));
+  animation:camillaLoaderProgress 2.8s ease-out forwards;
+}
+@keyframes camillaLoaderPhoto{
+  from{transform:scale(1.02)}to{transform:scale(1.07)}
+}
+@keyframes camillaLoaderProgress{
+  from{transform:scaleX(0)}to{transform:scaleX(1)}
+}
+@media(max-width:700px){
+  .site-loader-brand{font-size:14px}
+  .site-loader-kanji{width:40px;height:40px;font-size:22px}
+  .site-loader-progress{bottom:34px;width:58vw}
+}
