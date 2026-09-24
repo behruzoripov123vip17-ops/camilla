@@ -889,3 +889,11 @@ html a,html button,html input,html select,html textarea{cursor:none!important}
 .booking-final-actions{display:flex;gap:10px;margin-top:18px}.booking-final-note{font-size:11px;color:var(--muted);margin-top:14px}
 @media(max-width:900px){.booking-service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.booking-date-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.booking-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.booking-stage-head{align-items:flex-start;flex-direction:column}.booking-service-grid,.booking-time-grid{grid-template-columns:1fr}.booking-date-grid{grid-template-columns:repeat(4,1fr)}.booking-summary-grid{grid-template-columns:1fr}.booking-summary-grid>div:nth-child(odd){border-right:0}.booking-final-actions{flex-direction:column}}
+
+
+/* ===== CAMILLA stability patch 2026-09-24 ===== */
+#siteLoader.site-loader { z-index:10000; }
+#brushCursor.brush-cursor { z-index:10001; pointer-events:none; }
+.cursor-dot,.cursor-ring { display:none!important; visibility:hidden!important; opacity:0!important; pointer-events:none!important; }
+@media(pointer:fine){ html,body,a,button,input,select,textarea { cursor:none!important; } }
+@media(pointer:coarse){ html,body,a,button,input,select,textarea { cursor:auto!important; } #brushCursor{display:none!important;} }
