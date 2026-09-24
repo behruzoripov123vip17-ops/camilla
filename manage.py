@@ -66,8 +66,11 @@ def main() -> None:
     except ValueError:
         parser.error("port must be a number from 1 to 65535")
 
-    with socketserver.ThreadingTCPServer((host, port), SiteHandler) as server:
-        server.allow_reuse_address = True
+    class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+        daemon_threads = True
+
+    with ReusableThreadingTCPServer((host, port), SiteHandler) as server:
         print(f"CAMILLA is running at http://{host}:{port}/")
         print("Press Ctrl+C to stop.")
         try:
