@@ -729,3 +729,116 @@ body.site-is-loading> :not(#siteLoader){visibility:hidden!important}
   .site-loader-kanji{width:40px;height:40px;font-size:22px}
   .site-loader-progress{bottom:34px;width:58vw}
 }
+
+
+/* Restore the original animated loader from the Camilla design. */
+.site-loader{
+  position:fixed;inset:0;z-index:10000;
+  display:grid;place-items:center;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(124,58,237,.22),transparent 30%),
+    radial-gradient(circle at 50% 55%,rgba(167,139,250,.09),transparent 46%),
+    #09050f;
+  opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .65s var(--ease),visibility .65s;
+}
+.site-loader.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.site-is-loading{overflow:hidden}
+.site-is-loading > :not(#siteLoader){visibility:hidden}
+.site-loader-grid{
+  position:absolute;inset:-20%;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(196,181,253,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(196,181,253,.035) 1px,transparent 1px);
+  background-size:72px 72px;
+  mask-image:radial-gradient(circle at center,#000 0%,transparent 72%);
+  -webkit-mask-image:radial-gradient(circle at center,#000 0%,transparent 72%);
+  animation:loaderGrid 10s linear infinite;
+}
+.site-loader-brand{
+  position:absolute;top:42px;left:50%;transform:translateX(-50%);
+  z-index:3;display:flex;align-items:center;gap:12px;
+  color:var(--ink);font-family:var(--disp);font-size:17px;font-weight:800;
+  letter-spacing:.14em;animation:loaderBrand .9s var(--ease) both;
+  white-space:nowrap;
+}
+.site-loader-kanji{
+  width:44px;height:44px;display:grid;place-items:center;
+  border:1px solid var(--line2);border-radius:12px;
+  background:rgba(139,92,246,.1);font-family:var(--jp);
+  font-size:26px;color:var(--acc2);
+}
+.site-loader-word{display:block}
+.site-loader-brand small{
+  display:block;font-family:var(--body);font-size:9px;font-weight:500;
+  letter-spacing:.38em;color:var(--muted);margin-top:5px;
+}
+.site-loader-main{
+  position:relative;z-index:2;width:min(520px,48vw);height:min(520px,48vw);
+  min-width:320px;min-height:320px;display:grid;place-items:center;
+  filter:drop-shadow(0 0 35px rgba(139,92,246,.25));
+}
+.site-loader-main dotlottie-player{
+  display:block!important;width:100%!important;height:100%!important;
+  max-width:100%;max-height:100%;
+}
+.site-loader-caption{
+  position:absolute;bottom:118px;z-index:3;
+  display:flex;align-items:center;gap:18px;
+  color:var(--muted);font-size:10px;letter-spacing:.42em;font-weight:700;
+  animation:loaderCaption 1.1s var(--ease) .25s both;
+}
+.site-loader-caption span{width:54px;height:1px;background:linear-gradient(90deg,transparent,var(--acc2))}
+.site-loader-caption span:last-child{background:linear-gradient(90deg,var(--acc2),transparent)}
+.site-loader-progress{
+  position:absolute;left:50%;bottom:74px;z-index:3;
+  transform:translateX(-50%);width:min(300px,50vw);height:2px;
+  background:rgba(196,181,253,.12);overflow:hidden;
+}
+.site-loader-progress i{
+  display:block;width:100%;height:100%;transform-origin:0 50%;
+  background:linear-gradient(90deg,var(--acc3),var(--pink));
+  animation:loaderProgress 4.35s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes loaderProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes loaderGrid{to{transform:translate3d(72px,72px,0)}}
+@keyframes loaderBrand{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes loaderCaption{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media(max-width:700px){
+  .site-loader-brand{top:26px;font-size:14px}
+  .site-loader-kanji{width:38px;height:38px;font-size:22px}
+  .site-loader-main{width:min(360px,76vw);height:min(360px,76vw);min-width:240px;min-height:240px}
+  .site-loader-caption{bottom:92px;font-size:8px;letter-spacing:.28em;gap:10px}
+  .site-loader-caption span{width:30px}
+  .site-loader-progress{bottom:58px;width:52vw}
+}
+
+/* ============ BRUSH CURSOR — local recording ============ */
+.brush-cursor{
+  position:fixed;left:0;top:0;z-index:10001;
+  width:32px;height:32px;pointer-events:none;
+  opacity:0;transform:translate3d(-100px,-100px,0);
+  will-change:transform,opacity;transition:opacity .18s ease,filter .2s ease;
+}
+.brush-cursor img{
+  display:block;width:100%;height:100%;max-width:none;
+  object-fit:contain;user-select:none;-webkit-user-drag:none;
+  filter:drop-shadow(0 5px 10px rgba(0,0,0,.35));
+}
+.brush-cursor.on{opacity:1}
+.brush-cursor.hover{filter:drop-shadow(0 7px 16px rgba(167,139,250,.5))}
+@media(pointer:fine){
+  html,body{cursor:none}
+  a,button,input,select,textarea{cursor:none}
+}
+@media(pointer:coarse){.brush-cursor{display:none!important}}
+
+
+
+/* Cursor fix: ONLY the brush cursor is allowed. */
+.cursor-dot,.cursor-ring{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+html,body{cursor:none!important}
+html a,html button,html input,html select,html textarea{cursor:none!important}
+.brush-cursor{z-index:10001!important;display:block!important}
+@media(pointer:coarse){html,body,html a,html button,html input,html select,html textarea{cursor:auto!important}.brush-cursor{display:none!important}}
