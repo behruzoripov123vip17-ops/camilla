@@ -1051,7 +1051,10 @@
     const loader = $("#siteLoader");
     if (!loader) return;
 
+    let finished = false;
     const finish = () => {
+      if (finished) return;
+      finished = true;
       loader.classList.add("is-hidden");
       document.body.classList.remove("site-is-loading");
       document.body.style.overflow = "";
@@ -1061,7 +1064,7 @@
     document.body.classList.add("site-is-loading");
     document.body.style.overflow = "hidden";
 
-    const minTime = new Promise((resolve) => setTimeout(resolve, 2600));
+    const minTime = new Promise((resolve) => setTimeout(resolve, 1900));
     const pageReady = document.readyState === "complete"
       ? Promise.resolve()
       : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
@@ -1070,8 +1073,35 @@
       requestAnimationFrame(() => requestAnimationFrame(finish));
     });
 
-    // Never leave the site locked if an external animation/CDN is slow.
-    setTimeout(finish, 5200);
+    setTimeout(finish, 4800);
+  }
+
+  /* ============ HERO MOUSE DEPTH ============ */
+  function heroMotion() {
+    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
+    const hero = $(".hero");
+    const cards = $$(".hero-card");
+    if (!hero || !cards.length) return;
+
+    let raf = 0, tx = 0, ty = 0, cx = 0, cy = 0;
+    const render = () => {
+      cx += (tx - cx) * 0.075;
+      cy += (ty - cy) * 0.075;
+      cards.forEach((card, index) => {
+        const depth = index === 0 ? 1 : index === 1 ? 1.55 : 1.9;
+        card.style.setProperty("--mx", cx * depth + "px");
+        card.style.setProperty("--my", cy * depth + "px");
+      });
+      raf = requestAnimationFrame(render);
+    };
+    hero.addEventListener("pointermove", (e) => {
+      const r = hero.getBoundingClientRect();
+      tx = ((e.clientX - (r.left + r.width / 2)) / r.width) * 14;
+      ty = ((e.clientY - (r.top + r.height / 2)) / r.height) * 10;
+    }, { passive:true });
+    hero.addEventListener("pointerleave", () => { tx = 0; ty = 0; }, { passive:true });
+    raf = requestAnimationFrame(render);
+    addEventListener("pagehide", () => cancelAnimationFrame(raf), { once:true });
   }
 
   /* ============ INIT ============ */
@@ -1079,6 +1109,7 @@
     siteLoader();
     renderMedia();
     splitHero();
+    heroMotion();
     applyI18n();
     observeReveals(document);
     counters();
