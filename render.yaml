@@ -3,8 +3,10 @@ services:
     name: camilla-beauty-studio
     runtime: python
     plan: free
-    buildCommand: "python -m compileall backend.py manage.py"
-    startCommand: "python manage.py runserver 0.0.0.0:$PORT"
+    buildCommand: "python3 -m compileall backend.py manage.py"
+    startCommand: "python3 manage.py runserver 0.0.0.0:$PORT"
+    healthCheckPath: /api/services
+    autoDeploy: true
     envVars:
       - key: CAMILLA_GOOGLE_CLIENT_ID
         sync: false
