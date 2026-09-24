@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+JP:wght@300;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css?v=20260923-3">
+<link rel="stylesheet" href="style.css?v=20260923-4">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@dotlottie/player-component@v1.3.0/dist/dotlottie-player.js"></script>
   <script type="application/ld+json">
@@ -38,14 +38,16 @@
   </script>
 </head>
 <body class="site-is-loading">
-  <div id="siteLoader" class="site-loader" aria-hidden="true">
-    <div class="site-loader-image">
-      <img src="images/portfolio-1.jpg" alt="" fetchpriority="high" decoding="async">
-    </div>
-    <div class="site-loader-brand">
+  <div id="siteLoader" class="site-loader" role="status" aria-live="polite" aria-label="Загрузка сайта">
+    <div class="site-loader-grid" aria-hidden="true"></div>
+    <div class="site-loader-brand" aria-hidden="true">
       <span class="site-loader-kanji">美</span>
-      <span>CAMILLA<small>BEAUTY STUDIO</small></span>
+      <span class="site-loader-word">CAMILLA<small>BEAUTY STUDIO</small></span>
     </div>
+    <div class="site-loader-main">
+      <dotlottie-player src="https://lottie.host/ef1c4cb0-fa61-4656-a1b0-9ff837b99ae2/g8EkmOcmO0.lottie" background="transparent" speed="1" loop autoplay aria-label="Анимация загрузки"></dotlottie-player>
+    </div>
+    <div class="site-loader-caption" aria-hidden="true"><span></span>CAMILLA<span></span></div>
     <div class="site-loader-progress" aria-hidden="true"><i></i></div>
   </div>
   <div class="progress" aria-hidden="true"><i></i></div>
@@ -382,7 +384,7 @@
 
 
 <script src="i18n.js"></script>
-<script src="app.js?v=20260923-3"></script>
+<script src="app.js?v=20260923-4"></script>
   
 </body>
 </html>
