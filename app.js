@@ -701,6 +701,7 @@
     if (!audio || !toggle) return;
 
     let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
+    let pageReady = false;
     audio.volume = 0.34;
 
     const setState = (on) => {
@@ -712,7 +713,7 @@
     };
 
     const play = () => {
-      if (mutedByUser) return Promise.resolve(false);
+      if (!pageReady || mutedByUser) return Promise.resolve(false);
       return audio.play()
         .then(() => { setState(true); return true; })
         .catch(() => { setState(false); return false; });
@@ -731,19 +732,23 @@
       }
     });
 
-    // The real page is ready now. Try audible autoplay immediately after load.
-    const onPageLoaded = () => setTimeout(play, 180);
-    if (document.readyState === "complete") onPageLoaded();
-    else window.addEventListener("load", onPageLoaded, { once: true });
+    // IMPORTANT: this event is emitted only after the loading photo disappears.
+    window.addEventListener("camilla:ready", () => {
+      pageReady = true;
+      if (!mutedByUser) setTimeout(play, 220);
+    }, { once: true });
 
-    // Browser autoplay policies may require one user interaction.
+    // Browser autoplay fallback: if audio was blocked, the first interaction after
+    // the page is ready can start it.
     ["pointerdown", "keydown", "touchstart"].forEach((event) => {
-      document.addEventListener(event, () => { if (audio.paused && !mutedByUser) play(); }, { once: true, passive: true });
+      document.addEventListener(event, () => {
+        if (pageReady && audio.paused && !mutedByUser) play();
+      }, { once: true, passive: true });
     });
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) audio.pause();
-      else if (!mutedByUser) play();
+      else if (pageReady && !mutedByUser) play();
     });
 
     setState(false);
@@ -965,10 +970,25 @@
 
   /* ============ SITE LOADER ============ */
   function siteLoader() {
-    // The old blocking splash screen was removed. The website opens immediately.
-    document.body.classList.remove("site-is-loading");
-    document.body.style.overflow = "";
-    window.dispatchEvent(new CustomEvent("camilla:ready"));
+    // Show only the photo while the page/assets finish loading.
+    // No "site is loading" text is shown.
+    const loader = $("#siteLoader");
+    const finish = () => {
+      document.body.classList.remove("site-is-loading");
+      document.body.style.overflow = "";
+      if (loader) {
+        loader.classList.add("is-hidden");
+        setTimeout(() => loader.remove(), 700);
+      }
+      // Music is started ONLY after the loading screen has finished.
+      window.dispatchEvent(new CustomEvent("camilla:ready"));
+    };
+
+    if (document.readyState === "complete") {
+      requestAnimationFrame(() => setTimeout(finish, 120));
+    } else {
+      window.addEventListener("load", () => setTimeout(finish, 120), { once: true });
+    }
   }
 
   /* ============ INIT ============ */
