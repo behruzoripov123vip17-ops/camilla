@@ -678,30 +678,65 @@
   function music() {
     const audio = $("#siteMusic"), toggle = $("#musicToggle");
     if (!audio || !toggle) return;
+
     let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
+    let pageReady = false;
+
     const setState = (on) => {
       toggle.classList.toggle("playing", on);
       toggle.classList.toggle("muted", !on);
       toggle.setAttribute("aria-pressed", String(on));
       toggle.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
     };
+
     audio.volume = 0.34;
+
     const play = () => {
-      if (mutedByUser) return Promise.resolve(false);
-      return audio.play().then(() => { setState(true); return true; }).catch(() => { setState(false); return false; });
+      // Never start audio while the loading animation is still visible.
+      if (!pageReady || mutedByUser) return Promise.resolve(false);
+      return audio.play()
+        .then(() => { setState(true); return true; })
+        .catch(() => { setState(false); return false; });
     };
-    const unlock = () => { play(); };
+
     toggle.addEventListener("click", () => {
-      if (audio.paused) { mutedByUser = false; localStorage.removeItem("camilla_music_off"); play(); }
-      else { mutedByUser = true; localStorage.setItem("camilla_music_off","1"); audio.pause(); setState(false); }
+      if (!pageReady) return;
+      if (audio.paused) {
+        mutedByUser = false;
+        localStorage.removeItem("camilla_music_off");
+        play();
+      } else {
+        mutedByUser = true;
+        localStorage.setItem("camilla_music_off", "1");
+        audio.pause();
+        setState(false);
+      }
     });
-    window.addEventListener("camilla:ready", () => { setTimeout(play, 120); }, { once: true });
-    ["pointerdown","keydown","touchstart"].forEach((event) => document.addEventListener(event, unlock, { once: true, passive: true }));
+
+    // Loading animation has finished: now, and only now, music may start.
+    window.addEventListener("camilla:ready", () => {
+      pageReady = true;
+      if (!mutedByUser) setTimeout(play, 180);
+    }, { once: true });
+
+    // Autoplay fallback is also locked until the loading animation is finished.
+    const unlock = () => {
+      if (pageReady && audio.paused && !mutedByUser) play();
+    };
+    ["pointerdown", "keydown", "touchstart"].forEach((event) => {
+      document.addEventListener(event, unlock, { once: true, passive: true });
+    });
+
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) audio.pause();
-      else if (!mutedByUser) play();
+      else if (pageReady && !mutedByUser) play();
     });
-    addEventListener("pagehide", () => { audio.pause(); audio.currentTime = 0; }, { once: true });
+
+    addEventListener("pagehide", () => {
+      audio.pause();
+      audio.currentTime = 0;
+    }, { once: true });
+
     setState(false);
   }
 
