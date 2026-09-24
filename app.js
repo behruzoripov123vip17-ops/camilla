@@ -228,67 +228,36 @@
   /* ============ BRUSH CURSOR ============ */
   function brushCursor() {
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
-
     const brush = $("#brushCursor");
     if (!brush) return;
-
-    const dot = $(".cursor-dot");
-    const ring = $(".cursor-ring");
-    if (dot) dot.style.display = "none";
-    if (ring) ring.style.display = "none";
-
-    let visible = false;
-    let lastX = 0, lastY = 0;
-    let trailTick = 0;
-
-    const move = (e) => {
-      const x = e.clientX, y = e.clientY;
-      const dx = x - lastX, dy = y - lastY;
-      const distance = Math.hypot(dx, dy);
-      const speed = Math.min(1, distance / 32);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-      brush.style.transform =
-        "translate3d(" + (x - 9) + "px," + (y - 9) + "px,0) " +
-        "rotate(" + (angle * 0.06) + "deg) " +
-        "scale(" + (1 + speed * 0.08) + ")";
-
-      if (!visible) {
-        visible = true;
-        brush.classList.add("on");
-      }
-
-      // Lightweight paint trail: only emit dots while the pointer is moving.
-      if (distance > 8 && performance.now() - trailTick > 28) {
-        trailTick = performance.now();
-        const mark = document.createElement("i");
-        mark.className = "brush-trail";
-        mark.style.left = x + "px";
-        mark.style.top = y + "px";
-        mark.style.width = (4 + speed * 5) + "px";
-        mark.style.height = mark.style.width;
-        document.body.appendChild(mark);
-        setTimeout(() => mark.remove(), 600);
-      }
-
-      lastX = x;
-      lastY = y;
+    let lastSparkle = 0;
+    const sparkle = (x,y) => {
+      const now=performance.now();
+      if(now-lastSparkle<55) return;
+      lastSparkle=now;
+      const p=document.createElement("span");
+      p.className="brush-particle";
+      const size=4+Math.random()*6;
+      p.style.width=size+"px"; p.style.height=size+"px";
+      p.style.left=(x-2)+"px"; p.style.top=(y-2)+"px";
+      p.style.setProperty("--dx",((Math.random()-.5)*28)+"px");
+      p.style.setProperty("--dy",((Math.random()-.5)*28+14)+"px");
+      document.body.appendChild(p); setTimeout(()=>p.remove(),650);
     };
-
-    document.addEventListener("pointermove", move, { passive: true });
-    document.addEventListener("pointerover", (e) => {
-      const hit = e.target.closest("a,button,input,select,textarea,.chip,.tab,.tr,[data-tilt]");
-      brush.classList.toggle("hover", !!hit);
+    document.addEventListener("mousemove",e=>{
+      brush.style.opacity="1";
+      brush.style.transform="translate("+(e.clientX-6)+"px,"+(e.clientY-6)+"px)";
+      sparkle(e.clientX,e.clientY);
+    },{passive:true});
+    document.addEventListener("mouseleave",()=>brush.style.opacity="0");
+    document.addEventListener("mouseenter",()=>brush.style.opacity="1");
+    document.addEventListener("mouseover",e=>{
+      const hit=e.target.closest("a,button,input,select,textarea,.chip,.tab,.tr,[data-tilt],.ig-item,.row-book");
+      brush.classList.toggle("hovering",!!hit);
     });
-    document.addEventListener("pointerleave", () => {
-      visible = false;
-      brush.classList.remove("on");
-    });
-    document.addEventListener("pointerenter", () => {
-      if (visible) brush.classList.add("on");
-    });
+    document.addEventListener("mousedown",()=>brush.classList.add("clicking"));
+    document.addEventListener("mouseup",()=>brush.classList.remove("clicking"));
   }
-
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
     document.addEventListener("pointerdown", (e) => {
