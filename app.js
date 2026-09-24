@@ -221,30 +221,9 @@
 
   /* ============ CUSTOM CURSOR ============ */
   function cursor() {
-    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
-    const dot = $(".cursor-dot"), ring = $(".cursor-ring");
-    if (!dot || !ring) return;
-
-    let x = innerWidth / 2, y = innerHeight / 2, rx = x, ry = y;
-    document.addEventListener("mousemove", (e) => {
-      x = e.clientX;
-      y = e.clientY;
-      dot.style.transform = "translate(" + x + "px," + y + "px)";
-    }, { passive: true });
-
-    const loop = () => {
-      rx += (x - rx) * 0.14;
-      ry += (y - ry) * 0.14;
-      ring.style.transform = "translate(" + rx + "px," + ry + "px)";
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-
-    document.addEventListener("mouseover", (e) => {
-      const hit = e.target.closest("a,button,.chip,.tr,[data-tilt]");
-      ring.classList.toggle("grow", !!hit);
-    });
+    // Disabled: the brush is the only custom cursor.
   }
+
   /* ============ BRUSH CURSOR ============ */
   function brushCursor() {
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
@@ -699,58 +678,30 @@
   function music() {
     const audio = $("#siteMusic"), toggle = $("#musicToggle");
     if (!audio || !toggle) return;
-
     let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
-    let pageReady = false;
-    audio.volume = 0.34;
-
     const setState = (on) => {
       toggle.classList.toggle("playing", on);
       toggle.classList.toggle("muted", !on);
       toggle.setAttribute("aria-pressed", String(on));
       toggle.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
-      toggle.title = on ? "Выключить музыку" : "Включить музыку";
     };
-
+    audio.volume = 0.34;
     const play = () => {
-      if (!pageReady || mutedByUser) return Promise.resolve(false);
-      return audio.play()
-        .then(() => { setState(true); return true; })
-        .catch(() => { setState(false); return false; });
+      if (mutedByUser) return Promise.resolve(false);
+      return audio.play().then(() => { setState(true); return true; }).catch(() => { setState(false); return false; });
     };
-
+    const unlock = () => { play(); };
     toggle.addEventListener("click", () => {
-      if (audio.paused) {
-        mutedByUser = false;
-        localStorage.removeItem("camilla_music_off");
-        play();
-      } else {
-        mutedByUser = true;
-        localStorage.setItem("camilla_music_off", "1");
-        audio.pause();
-        setState(false);
-      }
+      if (audio.paused) { mutedByUser = false; localStorage.removeItem("camilla_music_off"); play(); }
+      else { mutedByUser = true; localStorage.setItem("camilla_music_off","1"); audio.pause(); setState(false); }
     });
-
-    // IMPORTANT: this event is emitted only after the loading photo disappears.
-    window.addEventListener("camilla:ready", () => {
-      pageReady = true;
-      if (!mutedByUser) setTimeout(play, 220);
-    }, { once: true });
-
-    // Browser autoplay fallback: if audio was blocked, the first interaction after
-    // the page is ready can start it.
-    ["pointerdown", "keydown", "touchstart"].forEach((event) => {
-      document.addEventListener(event, () => {
-        if (pageReady && audio.paused && !mutedByUser) play();
-      }, { once: true, passive: true });
-    });
-
+    window.addEventListener("camilla:ready", () => { setTimeout(play, 120); }, { once: true });
+    ["pointerdown","keydown","touchstart"].forEach((event) => document.addEventListener(event, unlock, { once: true, passive: true }));
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) audio.pause();
-      else if (pageReady && !mutedByUser) play();
+      else if (!mutedByUser) play();
     });
-
+    addEventListener("pagehide", () => { audio.pause(); audio.currentTime = 0; }, { once: true });
     setState(false);
   }
 
@@ -970,25 +921,30 @@
 
   /* ============ SITE LOADER ============ */
   function siteLoader() {
-    // Show only the photo while the page/assets finish loading.
-    // No "site is loading" text is shown.
     const loader = $("#siteLoader");
+    if (!loader) return;
+
     const finish = () => {
+      loader.classList.add("is-hidden");
       document.body.classList.remove("site-is-loading");
       document.body.style.overflow = "";
-      if (loader) {
-        loader.classList.add("is-hidden");
-        setTimeout(() => loader.remove(), 700);
-      }
-      // Music is started ONLY after the loading screen has finished.
       window.dispatchEvent(new CustomEvent("camilla:ready"));
     };
 
-    if (document.readyState === "complete") {
-      requestAnimationFrame(() => setTimeout(finish, 120));
-    } else {
-      window.addEventListener("load", () => setTimeout(finish, 120), { once: true });
-    }
+    document.body.classList.add("site-is-loading");
+    document.body.style.overflow = "hidden";
+
+    const minTime = new Promise((resolve) => setTimeout(resolve, 2600));
+    const pageReady = document.readyState === "complete"
+      ? Promise.resolve()
+      : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
+
+    Promise.all([minTime, pageReady]).then(() => {
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    });
+
+    // Never leave the site locked if an external animation/CDN is slow.
+    setTimeout(finish, 5200);
   }
 
   /* ============ INIT ============ */
