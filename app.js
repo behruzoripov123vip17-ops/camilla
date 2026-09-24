@@ -319,6 +319,7 @@
   function scrollFx() {
     const header = $("#header"), bar = $(".progress i"), totop = $("#totop"), barMobile = $(".mobile-bar");
     let lastY = 0, ticking = false;
+    if (!header || !bar || !totop) return;
     const onScroll = () => {
       const y = scrollY;
       const max = document.documentElement.scrollHeight - innerHeight;
@@ -329,7 +330,7 @@
       totop.classList.toggle("show", y > 900);
       const bk = $("#booking");
       const inBook = bk && y + innerHeight * 0.6 > bk.offsetTop && y < bk.offsetTop + bk.offsetHeight;
-      barMobile.classList.toggle("show", y > 700 && !inBook);
+      if (barMobile) barMobile.classList.toggle("show", y > 700 && !inBook);
       /* hero parallax */
       if (y < innerHeight * 1.2 && !RM) {
         $$("[data-parallax]").forEach((el) => {
@@ -495,8 +496,10 @@
       d.classList.toggle("done", n < B.step);
     });
 
-    $("#bookNext").style.display = B.step === 5 ? "none" : "";
-    $("#bookBack").style.display = B.step === 1 ? "none" : "";
+    const nextBtn = $("#bookNext"), backBtn = $("#bookBack");
+    if (!nextBtn || !backBtn) return;
+    nextBtn.style.display = B.step === 5 ? "none" : "";
+    backBtn.style.display = B.step === 1 ? "none" : "";
     $("#bookStepTitle").textContent = t("book.s" + B.step);
     $("#bookStepNo").textContent = String(B.step).padStart(2, "0");
 
@@ -657,7 +660,7 @@
       }
       showAuth();
     });
-    $("#authClose").addEventListener("click", () => modal.classList.remove("on"));
+    $("#authClose")?.addEventListener("click", () => { modal.classList.remove("on"); modal.setAttribute("aria-hidden", "true"); });
     $("#authSwitch").addEventListener("click", () => {
       const register = !card.classList.contains("register");
       card.classList.toggle("register", register);
@@ -696,6 +699,7 @@
         const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
         currentUser = data.user;
         modal.classList.remove("on");
+        modal.setAttribute("aria-hidden", "true");
         if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
         else toast(register ? "Аккаунт создан — продолжите запись" : "Вход выполнен");
       } catch (err) { $("#authError").textContent = err.message; }
@@ -904,7 +908,7 @@
     $$(".lang-btn").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
 
     /* tabs */
-    $("#catTabs").addEventListener("click", (e) => {
+    $("#catTabs")?.addEventListener("click", (e) => {
       const b = e.target.closest(".tab");
       if (!b) return;
       catFilter = b.dataset.cat;
@@ -913,7 +917,7 @@
     });
     /* search */
     const si = $("#servSearch");
-    si.addEventListener("input", () => { searchQ = si.value.trim().toLowerCase(); renderCatalog(); });
+    si?.addEventListener("input", () => { searchQ = si.value.trim().toLowerCase(); renderCatalog(); });
 
     /* booking interactions (delegated) */
     document.addEventListener("click", (e) => {
@@ -925,7 +929,18 @@
       if (e.target.closest("#weekNext")) { weekOffset++; renderWeekSchedule(); return; }
       if (e.target.closest("#weekToday")) { weekOffset=0; renderWeekSchedule(); return; }
       const pickS = e.target.closest("[data-pick-service]");
-      if (pickS) { const id = pickS.dataset.pickService; B.services = B.services[0] === id ? [] : [id]; B.date = null; B.time = null; toast(serviceById(id).friday ? "Access Bars принимается только по пятницам" : "По пятницам принимается только Access Bars"); renderBookingStep(); return; }
+      if (pickS) {
+        const id = pickS.dataset.pickService;
+        const wasSelected = B.services[0] === id;
+        B.services = wasSelected ? [] : [id];
+        B.date = null; B.time = null;
+        if (!wasSelected) {
+          const service = serviceById(id);
+          toast(service?.friday ? "Access Bars доступен по пятницам" : "Услуга выбрана ✓");
+        }
+        renderBookingStep();
+        return;
+      }
       const pickD = e.target.closest("[data-pick-date]");
       if (pickD && !pickD.disabled) { B.date = pickD.dataset.pickDate; B.time = null; renderBookingStep(); return; }
       const pickT = e.target.closest("[data-pick-time]");
@@ -956,7 +971,7 @@
       if (e.target.closest("#bookBack")) { B.step = Math.max(1, B.step - 1); renderBookingStep(); return; }
       if (e.target.closest("#restart")) { Object.assign(B, { step: 1, services: [], date: null, time: null, name: "", contact: "", comment: "" }); renderBookingStep(); return; }
       if (e.target.closest("#copyMsg")) {
-        navigator.clipboard.writeText(bookingMessage()).then(() => toast(t("book.copied")));
+        navigator.clipboard?.writeText(bookingMessage()).then(() => toast(t("book.copied"))).catch(() => toast(bookingMessage()));
         return;
       }
       if (e.target.closest("#sendTg")) {
@@ -991,7 +1006,7 @@
         document.body.classList.toggle("menu-open");
         return;
       }
-      $$(".mobile-menu a").forEach((a) => a.addEventListener("click", () => document.body.classList.remove("menu-open"), { once: true }));
+      if (e.target.closest(".mobile-menu a")) document.body.classList.remove("menu-open");
 
       /* totop */
       if (e.target.closest("#totop")) { scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); return; }
