@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+JP:wght@300;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="style.css?v=20260923-4">
+<link rel="stylesheet" href="style.css?v=20260923-5">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@dotlottie/player-component@v1.3.0/dist/dotlottie-player.js"></script>
   <script type="application/ld+json">
@@ -237,11 +237,6 @@
             <button class="btn btn-primary magnet" id="bookNext" data-i18n="book.next">Далее</button>
           </div>
         </div>
-        <div class="week-board" aria-label="Расписание на сегодня">
-          <div class="week-title"><p class="eyebrow small"><span class="line"></span><span>Расписание на сегодня</span></p><span class="live-clock" id="liveClock" aria-live="polite"></span><span class="jp-mark">予約表</span></div>
-          <p class="week-caption" id="todayCaption">Свободные интервалы на текущий день.</p>
-          <div id="weekSchedule" class="week-grid"></div>
-          <div class="week-legend"><span class="free">Доступно</span><span class="busy">Занято</span><span class="pause">Перерыв</span><span class="selected">Выбрано</span></div>
         </div>
       </div>
     </section>
@@ -352,7 +347,7 @@
       </form>
       <p id="authError" class="auth-error" role="alert"></p>
       <div class="auth-divider"><span>или</span></div>
-      <div class="google-continue-label">Продолжить с Google</div>
+      <div class="google-continue-label">Войти через Google</div>
       <div id="googleSignIn" class="google-sign-in" aria-label="Продолжить с Google"></div>
       <p id="googleAuthHint" class="auth-hint google-auth-hint" hidden></p>
       <button id="authSwitch" class="auth-switch" type="button">У меня уже есть аккаунт</button>
@@ -384,7 +379,7 @@
 
 
 <script src="i18n.js"></script>
-<script src="app.js?v=20260923-4"></script>
+<script src="app.js?v=20260923-5"></script>
   
 </body>
 </html>
