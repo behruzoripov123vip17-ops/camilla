@@ -239,23 +239,40 @@
 
     let visible = false;
     let lastX = 0, lastY = 0;
+    let trailTick = 0;
 
     const move = (e) => {
       const x = e.clientX, y = e.clientY;
       const dx = x - lastX, dy = y - lastY;
-      const speed = Math.min(1, Math.hypot(dx, dy) / 32);
+      const distance = Math.hypot(dx, dy);
+      const speed = Math.min(1, distance / 32);
       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
       brush.style.transform =
-        "translate3d(" + (x - 7) + "px," + (y - 7) + "px,0) " +
+        "translate3d(" + (x - 9) + "px," + (y - 9) + "px,0) " +
         "rotate(" + (angle * 0.06) + "deg) " +
-        "scale(" + (1 + speed * 0.06) + ")";
+        "scale(" + (1 + speed * 0.08) + ")";
 
       if (!visible) {
         visible = true;
         brush.classList.add("on");
       }
-      lastX = x; lastY = y;
+
+      // Lightweight paint trail: only emit dots while the pointer is moving.
+      if (distance > 8 && performance.now() - trailTick > 28) {
+        trailTick = performance.now();
+        const mark = document.createElement("i");
+        mark.className = "brush-trail";
+        mark.style.left = x + "px";
+        mark.style.top = y + "px";
+        mark.style.width = (4 + speed * 5) + "px";
+        mark.style.height = mark.style.width;
+        document.body.appendChild(mark);
+        setTimeout(() => mark.remove(), 600);
+      }
+
+      lastX = x;
+      lastY = y;
     };
 
     document.addEventListener("pointermove", move, { passive: true });
