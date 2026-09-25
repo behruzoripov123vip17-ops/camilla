@@ -55,6 +55,13 @@ def load_local_env() -> None:
 
 load_local_env()
 GOOGLE_CLIENT_ID = os.getenv("CAMILLA_GOOGLE_CLIENT_ID", "")
+ALLOWED_ORIGINS = {
+    "https://camila-whzj.onrender.com",
+    "https://camilla-sfci.onrender.com",
+    "https://camilla-beauty-studio.onrender.com",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+}
 
 
 def db():
@@ -302,9 +309,28 @@ class APIHandler(BaseHTTPRequestHandler):
         body = json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        origin = self.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Vary", "Origin")
         self.send_header("Content-Length", str(len(body)))
         if cookies: self.send_header("Set-Cookie", cookies)
         self.end_headers(); self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        origin = self.headers.get("Origin", "")
+        if origin not in ALLOWED_ORIGINS:
+            self.send_response(403)
+            self.end_headers()
+            return
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Credentials", "true")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
+        self.end_headers()
 
     def body(self):
         length = int(self.headers.get("Content-Length", 0))
