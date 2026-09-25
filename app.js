@@ -233,7 +233,7 @@
     let lastSparkle = 0;
     const sparkle = (x,y) => {
       const now=performance.now();
-      if(now-lastSparkle<55) return;
+      if(now-lastSparkle<110) return;
       lastSparkle=now;
       const p=document.createElement("span");
       p.className="brush-particle";
@@ -242,7 +242,7 @@
       p.style.left=(x-2)+"px"; p.style.top=(y-2)+"px";
       p.style.setProperty("--dx",((Math.random()-.5)*28)+"px");
       p.style.setProperty("--dy",((Math.random()-.5)*28+14)+"px");
-      document.body.appendChild(p); setTimeout(()=>p.remove(),650);
+      document.body.appendChild(p); setTimeout(()=>p.remove(),520);
     };
     document.addEventListener("mousemove",e=>{
       brush.style.opacity="1";
@@ -319,7 +319,7 @@
       if (barMobile) barMobile.classList.toggle("show", y > 700 && !inBook);
       /* hero parallax */
       if (y < innerHeight * 1.2 && !RM) {
-        $$("[data-parallax]").forEach((el) => {
+        $("[data-parallax]").forEach((el) => {
           el.style.transform = `translate3d(0, ${y * parseFloat(el.dataset.parallax)}px, 0)`;
         });
       }
