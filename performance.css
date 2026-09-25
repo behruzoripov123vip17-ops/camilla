@@ -1,0 +1,48 @@
+/* CAMILLA performance optimizations */
+html.camilla-low-power *,
+html.camilla-low-power *::before,
+html.camilla-low-power *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+}
+html.camilla-low-power .brush-cursor,
+html.camilla-low-power .site2-spotlight,
+html.camilla-low-power .noise,
+html.camilla-low-power .orb,
+html.camilla-low-power .site-loader-main dotlottie-player {
+  display: none !important;
+}
+html.camilla-low-power #header,
+html.camilla-low-power .acc details,
+html.camilla-low-power .hours-card,
+html.camilla-low-power .contact-card,
+html.camilla-low-power .book-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.camilla-low-power img {
+  content-visibility: auto;
+}
+@media (min-width: 701px) {
+  .section,
+  .reel-wrap,
+  .insta,
+  .contacts {
+    content-visibility: auto;
+    contain-intrinsic-size: 900px;
+  }
+}
+.site-loader-orbit {
+  width: 72px;
+  height: 72px;
+  margin: auto;
+  border: 2px solid rgba(201,167,255,.18);
+  border-top-color: #c9a7ff;
+  border-radius: 50%;
+  animation: camillaLoaderSpin 1s linear infinite;
+}
+@keyframes camillaLoaderSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .site-loader-orbit { animation: none; }
+}
