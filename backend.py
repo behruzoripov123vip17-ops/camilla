@@ -17,7 +17,7 @@ import time
 from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from email.message import EmailMessage
@@ -40,6 +40,7 @@ ENV_PATH = BASE_DIR / ".env"
 SESSION_TTL = 60 * 60 * 24 * 30
 SMS_CODE_TTL = 300  # 5 minutes
 SMS_CODE_LENGTH = 6
+TZ_OFFSET = timezone(timedelta(hours=5))
 
 
 def load_local_env() -> None:
@@ -401,7 +402,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     if user["role"] != "ADMIN": return self.json(403, {"error": "Доступ только для администратора"})
                     status = data.get("status")
                     payment_status = data.get("payment_status")
-                    if status not in (None, "CONFIRMED", "CANCELLED") or payment_status not in (None, "PAID", "UNPAID"):
+                    if status not in (None, "CONFIRMED", "CANCELLED", "COMPLETED") or payment_status not in (None, "PAID", "UNPAID"):
                         return self.json(400, {"error": "Некорректный статус"})
                     if not status and not payment_status: return self.json(400, {"error": "Выберите изменение"})
                     fields, values = [], []
@@ -410,16 +411,23 @@ class APIHandler(BaseHTTPRequestHandler):
                     values.append(data.get("id"))
                     if not conn.execute(f"UPDATE bookings SET {', '.join(fields)} WHERE id=?", values).rowcount:
                         return self.json(404, {"error": "Запись не найдена"})
+                    if status in ("CONFIRMED", "CANCELLED", "COMPLETED"):
+                        messages = {"CONFIRMED": "Ваша запись подтверждена.", "CANCELLED": "Ваша запись отменена. Выберите другое удобное время.", "COMPLETED": "Процедура завершена. Будем рады видеть вас снова в CAMILLA."}
+                        row = conn.execute("SELECT user_id FROM bookings WHERE id=?", (data.get("id"),)).fetchone()
+                        if row:
+                            conn.execute("INSERT INTO notifications(user_id,kind,message) VALUES(?,?,?)", (row["user_id"], "BOOKING_STATUS", messages[status]))
                     return self.json(200, {"status": status, "payment_status": payment_status})
                 if path == "/api/bookings":
                     required = (data.get("specialist_id"), data.get("service_id"), data.get("starts_at"), data.get("ends_at"))
                     if not all(required): return self.json(400, {"error": "Недостаточно данных для записи"})
+                    if str(data["specialist_id"]) != "1": return self.json(400, {"error": "Специалист недоступен"})
                     try:
                         starts_at = datetime.fromisoformat(data["starts_at"])
                         ends_at = datetime.fromisoformat(data["ends_at"])
                     except (TypeError, ValueError):
                         return self.json(400, {"error": "Некорректное время записи"})
-                    if starts_at.date() < datetime.now().date():
+                    now_tz = datetime.now(TZ_OFFSET).replace(tzinfo=None)
+                    if starts_at.date() < now_tz.date():
                         return self.json(400, {"error": "Нельзя записаться на прошедшую дату"})
                     durations = {"a1": 120, "m1": 120, "m2": 120, "m3": 120, "m4": 120, "m5": 120, "m6": 120,
                                  "p1": 120, "p2": 120, "p3": 120, "p4": 120, "d1": 60, "d2": 30, "d3": 60, "d4": 60}
@@ -432,8 +440,6 @@ class APIHandler(BaseHTTPRequestHandler):
                         return self.json(400, {"error": "Для этой услуги доступны только двухчасовые интервалы"})
                     if data["service_id"] == "a1" and starts_at.weekday() != 4:
                         return self.json(400, {"error": "Access Bars доступен только по пятницам"})
-                    if data["service_id"] != "a1" and starts_at.weekday() == 4:
-                        return self.json(400, {"error": "По пятницам принимается только Access Bars"})
                     conflict = conn.execute("SELECT 1 FROM bookings WHERE specialist_id=? AND status IN ('PENDING','CONFIRMED') AND starts_at < ? AND ends_at > ?", (data["specialist_id"], data["ends_at"], data["starts_at"])).fetchone()
                     if conflict: return self.json(409, {"error": "Это время уже занято"})
                     contact = str(data.get("contact", "")).strip()[:120]
