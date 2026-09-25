@@ -7,7 +7,7 @@
   const escape = (value) => String(value || "—").replace(/[&<>"']/g, (x) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[x]));
   async function api(path, options = {}) { const res = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options}); const data = res.status === 204 ? {} : await res.json(); if (!res.ok) throw new Error(data.error || "Ошибка"); return data; }
   function dateLabel(iso) { return new Date(iso).toLocaleString("ru-RU", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
-  function statusLabel(value) { return ({PENDING:"Ожидает",CONFIRMED:"Подтверждена",CANCELLED:"Отменена"}[value] || value); }
+  function statusLabel(value) { return ({PENDING:"Ожидает",CONFIRMED:"Подтверждена",CANCELLED:"Отменена",COMPLETED:"Завершена"}[value] || value); }
   async function render() {
     const data = await api(`/api/admin/dashboard?period=${period}`);
     $("#dashDate").textContent = `Данные обновлены: ${new Date().toLocaleString("ru-RU")}`;
