@@ -1101,3 +1101,33 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
+
+
+/* ===== SITE 2 — MICRO INTERACTIONS v2 ===== */
+(()=>{
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ready=()=>{
+    if(document.querySelector('.site2-progress')===null){
+      const bar=document.createElement('div');bar.className='site2-progress';document.body.appendChild(bar);
+      const update=()=>{const max=document.documentElement.scrollHeight-innerHeight;bar.style.transform='scaleX('+(max>0?scrollY/max:0)+')'};
+      addEventListener('scroll',update,{passive:true});update();
+    }
+    if(!reduce && !document.querySelector('.site2-spotlight')){
+      const spot=document.createElement('div');spot.className='site2-spotlight';document.body.appendChild(spot);
+      let raf=0,x=0,y=0;
+      addEventListener('pointermove',e=>{x=e.clientX;y=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{spot.style.left=x+'px';spot.style.top=y+'px';spot.style.opacity='1';raf=0})},{passive:true});
+      addEventListener('pointerleave',()=>spot.style.opacity='0');
+    }
+    if(!reduce){
+      const candidates=[...document.querySelectorAll('section,.service-card,.contact-card,.hours-card,.book-card,.ig-item,.hero-card,.reel-card,.faq-item')];
+      candidates.forEach((el,i)=>{if(el.dataset.site2Reveal)return;el.dataset.site2Reveal='1';el.classList.add('site2-reveal');el.style.setProperty('--reveal-delay',Math.min(i%6,5)*55+'ms')});
+      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -35px'});
+      document.querySelectorAll('.site2-reveal').forEach(el=>io.observe(el));
+      document.querySelectorAll('.section-title').forEach(el=>{const o=new IntersectionObserver(es=>{if(es[0].isIntersecting){el.classList.add('site2-active');o.disconnect()}},{threshold:.7});o.observe(el)});
+      document.addEventListener('click',e=>{const b=e.target.closest('button,.btn,.btn-primary,.btn-ghost,.chip,.tab');if(!b)return;const r=b.getBoundingClientRect();const s=document.createElement('span');s.className='site2-ripple';s.style.left=(e.clientX-r.left)+'px';s.style.top=(e.clientY-r.top)+'px';b.appendChild(s);setTimeout(()=>s.remove(),750)},{passive:true});
+      document.querySelectorAll('[data-tilt],.hero-card.float,.ig-item,.service-card').forEach(el=>{el.classList.add('site2-tilt');el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;el.style.transform='perspective(900px) rotateX('+(-py*4)+'deg) rotateY('+(px*5)+'deg) translateY(-4px)'},{passive:true});el.addEventListener('pointerleave',()=>{el.style.transform=''},{passive:true})});
+      document.querySelectorAll('img').forEach(img=>{if(img.closest('.site2-image'))return;const wrap=img.closest('.hero-card,.ig-item,.reel-card,.portfolio-item');if(wrap)wrap.classList.add('site2-image')});
+    }
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+})();
