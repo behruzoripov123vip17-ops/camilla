@@ -819,7 +819,7 @@
       window.google.accounts.id.renderButton(host, {
         type: "standard", theme: "outline", size: "large",
         shape: "rectangular", width: Math.min(360, host.clientWidth || 360),
-        text: "continue_with"
+        text: "signin_with"
       });
       return true;
     };
