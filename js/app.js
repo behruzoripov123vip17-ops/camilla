@@ -944,7 +944,8 @@
       if (e.target.closest("#bookNext")) {
         if (B.step === 1 && !B.services.length) return shake("#bookPanels", t("book.errService"));
         if (B.step === 2 && !B.date) return shake("#bookPanels", t("book.errDate"));
-        if (B.step === 3 && !B.time) return shake("#bookPanels", t("book.errTime"));\n        if (B.step === 3 && B.date && B.time) { const mins = Number(B.time.slice(0,2))*60 + Number(B.time.slice(3,5)); if (!slotsFor(new Date(B.date + "T12:00:00")).includes(mins)) return shake("#bookPanels", "Это время уже недоступно. Выберите другой интервал."); }
+        if (B.step === 3 && !B.time) return shake("#bookPanels", t("book.errTime"));
+        if (B.step === 3 && B.date && B.time) { const mins = Number(B.time.slice(0,2))*60 + Number(B.time.slice(3,5)); if (!slotsFor(new Date(B.date + "T12:00:00")).includes(mins)) return shake("#bookPanels", "Это время уже недоступно. Выберите другой интервал."); }
         if (B.step === 4) {
           B.name = $("#bName").value.trim(); B.contact = $("#bContact").value.trim(); B.comment = $("#bComment").value.trim();
           if (!B.name) return shake("#bookPanels", t("book.errName"));
