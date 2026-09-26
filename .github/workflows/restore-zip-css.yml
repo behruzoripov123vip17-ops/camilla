@@ -1,0 +1,21 @@
+name: Restore ZIP visual CSS
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  restore:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore CSS from ZIP reference
+        run: |
+          gzip -dc css/zip-style.css.gz > css/style.css
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add css/style.css
+          git diff --cached --quiet && exit 0
+          git commit -m "Apply exact ZIP visual CSS [skip ci]"
+          git push
