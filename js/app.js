@@ -319,7 +319,7 @@
       if (barMobile) barMobile.classList.toggle("show", y > 700 && !inBook);
       /* hero parallax */
       if (y < innerHeight * 1.2 && !RM) {
-        $("[data-parallax]").forEach((el) => {
+        Array.from(document.querySelectorAll("[data-parallax]")).forEach((el) => {
           el.style.transform = `translate3d(0, ${y * parseFloat(el.dataset.parallax)}px, 0)`;
         });
       }
