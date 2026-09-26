@@ -116,6 +116,14 @@ def init_db():
           created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX IF NOT EXISTS idx_sms_codes_phone ON sms_codes(phone);
+        CREATE TABLE IF NOT EXISTS site_visits (
+          id INTEGER PRIMARY KEY,
+          visit_day TEXT NOT NULL,
+          visitor_key TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(visit_day, visitor_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_site_visits_day ON site_visits(visit_day);
         """)
         # Lightweight migrations for databases created by earlier site versions.
         booking_columns = {row[1] for row in conn.execute("PRAGMA table_info(bookings)")}
@@ -126,6 +134,8 @@ def init_db():
         user_columns = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
         if "google_sub" not in user_columns:
             conn.execute("ALTER TABLE users ADD COLUMN google_sub TEXT")
+        if "avatar_data" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN avatar_data TEXT NOT NULL DEFAULT ''")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub)")
         conn.executemany("INSERT OR IGNORE INTO services VALUES (?, ?, ?, ?, 1)", [
           ("a1", "Access Bars", 90, 300000), ("m1", "Маникюр без покрытия", 120, 70000),
