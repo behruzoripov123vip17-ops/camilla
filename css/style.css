@@ -2077,3 +2077,168 @@ body:before{
   .booking-nav,.book-nav{position:sticky;bottom:8px;z-index:4;background:rgba(14,7,20,.86);backdrop-filter:blur(12px);padding:8px;border-radius:14px}
   .profile-head{align-items:flex-start}.profile-avatar{width:76px;height:76px}
 }
+
+/* ===== CAMILLA VISUAL POLISH 2026-09-26 ===== */
+:root{
+  --glass:rgba(255,255,255,.045);
+  --glass-strong:rgba(255,255,255,.075);
+  --glow:rgba(167,139,250,.22);
+}
+body{
+  background:
+    radial-gradient(900px 520px at 8% -5%,rgba(139,92,246,.13),transparent 62%),
+    radial-gradient(760px 520px at 92% 18%,rgba(233,213,255,.07),transparent 62%),
+    var(--bg);
+}
+#header{
+  background:rgba(14,7,20,.58);
+  border-color:rgba(196,181,253,.14);
+  box-shadow:0 18px 55px rgba(0,0,0,.22);
+}
+#header.scrolled{
+  background:rgba(14,7,20,.82);
+  border-color:rgba(196,181,253,.22);
+  box-shadow:0 20px 70px rgba(0,0,0,.36);
+}
+.logo-mark{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 0 24px rgba(167,139,250,.08);
+}
+.hero{
+  isolation:isolate;
+}
+.hero::after{
+  content:"";
+  position:absolute;
+  width:min(52vw,680px);height:min(52vw,680px);
+  right:-16vw;top:4vh;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(167,139,250,.16),transparent 66%);
+  filter:blur(20px);
+  pointer-events:none;
+  z-index:-1;
+  animation:heroAura 8s ease-in-out infinite alternate;
+}
+@keyframes heroAura{to{transform:translate(-30px,24px) scale(1.08);opacity:.72}}
+.hero-card.main{
+  border-radius:32px;
+  border-color:rgba(233,213,255,.22);
+  box-shadow:0 38px 100px rgba(0,0,0,.58),0 0 90px rgba(124,58,237,.14);
+}
+.hero-card.float{
+  border-radius:24px;
+  backdrop-filter:blur(12px);
+}
+.hero-badge{
+  backdrop-filter:blur(14px);
+  background:rgba(10,5,15,.42);
+  border-color:rgba(233,213,255,.2);
+}
+.btn{
+  border-radius:15px;
+  letter-spacing:.01em;
+  transition:transform .35s var(--spring),box-shadow .35s var(--ease),border-color .35s,background .35s;
+}
+.btn-primary{
+  position:relative;
+  overflow:hidden;
+}
+.btn-primary::before{
+  content:"";
+  position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.22) 48%,transparent 70%);
+  transform:translateX(-130%);
+  transition:transform .75s var(--ease);
+}
+.btn-primary:hover::before{transform:translateX(130%)}
+.service-card,.book-card,.hours-card,.contact-card,.sched,.spec-photo,.ig-item{
+  backdrop-filter:blur(18px);
+}
+.service-card{
+  border-radius:24px;
+  background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.012));
+}
+.service-card:hover{
+  transform:translateY(-10px) scale(1.008);
+}
+.tab:hover{transform:translateY(-2px)}
+.book-card{
+  background:
+    radial-gradient(500px 220px at 90% 0%,rgba(167,139,250,.09),transparent 70%),
+    linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.012));
+}
+.book-card-head{
+  border-bottom-color:rgba(196,181,253,.10);
+}
+.step-dot.on i{
+  background:linear-gradient(135deg,#c4b5fd,#7c3aed);
+  color:#fff;
+  border-color:rgba(255,255,255,.2);
+}
+.contact-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.012));
+}
+.contact-card:hover{transform:translateY(-8px) scale(1.01)}
+.ig-item{border-radius:22px}
+.ig-item::after{
+  content:"";
+  position:absolute;inset:0;
+  border:1px solid rgba(233,213,255,.12);
+  border-radius:inherit;
+  pointer-events:none;
+}
+.totop{box-shadow:0 15px 45px rgba(0,0,0,.35)}
+.mobile-bar{
+  box-shadow:0 -18px 50px rgba(0,0,0,.3);
+}
+@media(max-width:700px){
+  body{font-size:15px}
+  #header{
+    padding:10px 12px;
+    backdrop-filter:blur(20px);
+  }
+  .logo-text{font-size:13px}
+  .logo-mark{width:36px;height:36px}
+  .hero-left{padding-inline:2px}
+  .hero-cta{display:grid;grid-template-columns:1fr;gap:10px}
+  .hero-cta .btn{width:100%;justify-content:center}
+  .hero-card.main{border-radius:24px}
+  .hero-card.float{border-radius:18px}
+  .serv-head,.book-head,.insta-head{gap:18px}
+  .serv-tools{width:100%}
+  #servSearch{width:100%;min-height:48px}
+  .tabs{
+    display:flex;
+    overflow-x:auto;
+    scrollbar-width:none;
+    padding:6px;
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;flex:0 0 auto}
+  .book-card{padding:18px;border-radius:22px}
+  .book-card-head{gap:8px}
+  .book-nav .btn{min-width:110px}
+  .contact-card{padding:22px}
+  .ig-grid{gap:9px}
+  .ig-item{border-radius:14px}
+  .totop{right:14px;bottom:82px;width:44px;height:44px}
+}
+@media(max-width:430px){
+  .wrap{width:min(1200px,91vw)}
+  #heroTitle{font-size:clamp(2.55rem,14vw,4rem)}
+  .hero-sub{font-size:.92rem}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{min-width:0}
+  .stat b{font-size:1.35rem}
+  .stat span{display:block;font-size:8px;line-height:1.25}
+  .hero-right{height:105vw;min-height:320px}
+  .hero-card.main{inset:0 7% 0 4%}
+  .hero-card.f1{left:-4%;width:32%}
+  .hero-card.f2{right:-3%;width:25%}
+  .step-dot i{width:34px;height:34px}
+  .book-nav{gap:8px}
+  .book-nav .btn{flex:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero::after{animation:none}
+  .btn-primary::before{display:none}
+}
