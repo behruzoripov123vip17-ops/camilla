@@ -33,7 +33,7 @@ ESKIZ_EMAIL = ""
 ESKIZ_PASSWORD = ""
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "camilla.sqlite3"
+DB_PATH = Path(os.getenv("CAMILLA_DB_PATH", str(BASE_DIR / "camilla.sqlite3")))
 OWNER_EMAIL = "behruzoripov123vip17@gmail.com"
 OWNER_CREDENTIALS_PATH = BASE_DIR / ".camilla-owner-credentials.txt"
 ENV_PATH = BASE_DIR / ".env"
@@ -56,6 +56,7 @@ def load_local_env() -> None:
 
 load_local_env()
 GOOGLE_CLIENT_ID = os.getenv("CAMILLA_GOOGLE_CLIENT_ID", "")
+OWNER_PASSWORD_ENV = os.getenv("CAMILLA_OWNER_PASSWORD", "")
 ALLOWED_ORIGINS = {
     "https://camila-whzj.onrender.com",
     "https://camilla-sfci.onrender.com",
@@ -78,6 +79,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE,
           phone TEXT UNIQUE, password_hash TEXT, role TEXT NOT NULL DEFAULT 'USER', language TEXT NOT NULL DEFAULT 'ru',
+          avatar_data TEXT NOT NULL DEFAULT '',
           created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS specialists (
@@ -138,7 +140,9 @@ def init_db():
         conn.execute("UPDATE services SET duration_minutes=120 WHERE id='a1'")
         # The owner password exists only in a local, ignored file.  It is never
         # embedded in the site or sent to clients.
-        if OWNER_CREDENTIALS_PATH.exists():
+        if OWNER_PASSWORD_ENV:
+            owner_password = OWNER_PASSWORD_ENV
+        elif OWNER_CREDENTIALS_PATH.exists():
             owner_password = OWNER_CREDENTIALS_PATH.read_text(encoding="utf-8").split("Пароль: ", 1)[-1].strip()
         else:
             owner_password = secrets.token_urlsafe(24)
@@ -303,6 +307,10 @@ def verify_google_credential(credential: str):
     if str(claims.get("email_verified", "")).lower() not in ("true", "1") or not claims.get("sub") or not claims.get("email"):
         return None
     return claims
+
+
+def visitor_hash(visitor_key: str, day: str) -> str:
+    return hashlib.sha256(f"{day}:{visitor_key}".encode("utf-8")).hexdigest()
 
 
 class APIHandler(BaseHTTPRequestHandler):
