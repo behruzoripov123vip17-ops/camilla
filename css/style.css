@@ -2038,3 +2038,42 @@ body:before{
 @media (prefers-reduced-motion: reduce) {
   .noise { display:none; }
 }
+
+/* === CAMILLA account + mobile performance polish === */
+.account-button{width:42px;height:42px;padding:0!important;border-radius:50%;display:grid;place-items:center;overflow:hidden}
+.account-button img{width:22px;height:22px;object-fit:cover;border-radius:50%;transition:transform .25s ease}
+.account-button.has-avatar{border-color:rgba(196,181,253,.7);box-shadow:0 0 0 2px rgba(124,58,237,.2)}
+.account-button.has-avatar img{width:100%;height:100%}
+.register-only[hidden]{display:none!important}
+.profile-card{max-width:720px}
+.profile-head{display:flex;align-items:center;gap:18px;margin:18px 0 22px}
+.profile-avatar-wrap{display:grid;justify-items:center;gap:8px;flex:0 0 auto}
+.profile-avatar{width:92px;height:92px;border-radius:50%;object-fit:cover;border:1px solid rgba(196,181,253,.35);background:#160d20}
+.avatar-upload{cursor:pointer;font-size:11px;color:#c4b5fd;text-align:center}
+.avatar-upload input{display:none}
+.profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.profile-fields label{display:grid;gap:7px;color:#bdb0ca;font-size:12px}
+.profile-fields input{width:100%;box-sizing:border-box;border:1px solid rgba(196,181,253,.2);background:rgba(14,7,20,.75);color:#fff;border-radius:12px;padding:12px 13px;font:inherit}
+.profile-fields .btn{grid-column:1/-1}
+.profile-bookings-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin:8px 0 12px;color:#f8f5ff;font-weight:700}
+.profile-bookings-head small{color:#8f849d;font-weight:500}
+.google-sign-in{width:100%;min-height:44px;display:flex;justify-content:center}
+.google-sign-in iframe{max-width:100%}
+@media (pointer:coarse), (max-width:760px){
+  html{scroll-behavior:auto}.bg .orb{filter:blur(50px);opacity:.42}.noise{display:none}
+  .hero-card[data-tilt],.spec-photo[data-tilt],.hours-card[data-tilt]{transform:none!important}
+  .reel-wrap{height:auto!important}.reel-sticky{position:relative!important;top:auto!important}
+  .reel-track{transform:none!important;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 20px 24px}
+  .reel-track>*{scroll-snap-align:center;flex:0 0 min(78vw,320px);opacity:1!important;transform:none!important}
+  .hero-right{will-change:auto}.kb{animation:none!important}.profile-fields{grid-template-columns:1fr}.profile-fields .btn{grid-column:auto}
+}
+@media (max-width:560px){
+  header{padding-inline:14px!important}.head-right{gap:6px!important}.head-right .btn-primary{display:none}
+  .account-button{width:38px;height:38px}.hero{min-height:720px}.hero-grid{gap:26px}
+  .hero-left h1{font-size:clamp(34px,11vw,58px)!important;line-height:1.02}.hero-cta{display:grid;grid-template-columns:1fr;gap:8px}
+  .hero-cta .btn{width:100%;box-sizing:border-box}.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat b{font-size:20px}.stat span{font-size:9px}
+  .stepper{overflow-x:auto;justify-content:flex-start;padding-bottom:5px}.step-dot{flex:0 0 150px}
+  .booking-service-grid,.booking-date-grid,.booking-time-grid{grid-template-columns:1fr!important}
+  .booking-nav,.book-nav{position:sticky;bottom:8px;z-index:4;background:rgba(14,7,20,.86);backdrop-filter:blur(12px);padding:8px;border-radius:14px}
+  .profile-head{align-items:flex-start}.profile-avatar{width:76px;height:76px}
+}
