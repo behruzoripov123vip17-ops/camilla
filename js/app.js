@@ -305,7 +305,11 @@
   function scrollFx() {
     const header = $("#header"), bar = $(".progress i"), totop = $("#totop"), barMobile = $(".mobile-bar");
     let lastY = 0, ticking = false;
+    const parallaxEls = $$("[data-parallax]");
+    const spySections = ["specialist", "services", "reels", "booking", "info", "instagram", "contacts"]
+      .map((id) => document.getElementById(id)).filter(Boolean);
     if (!header || !bar || !totop) return;
+
     const onScroll = () => {
       const y = scrollY;
       const max = document.documentElement.scrollHeight - innerHeight;
@@ -314,26 +318,32 @@
       header.classList.toggle("hidden", y > 500 && y > lastY + 4);
       if (y < 500 || y < lastY - 4) header.classList.remove("hidden");
       totop.classList.toggle("show", y > 900);
+
       const bk = $("#booking");
       const inBook = bk && y + innerHeight * 0.6 > bk.offsetTop && y < bk.offsetTop + bk.offsetHeight;
       if (barMobile) barMobile.classList.toggle("show", y > 700 && !inBook);
-      /* hero parallax */
-      if (y < innerHeight * 1.2 && !RM) {
-        Array.from(document.querySelectorAll("[data-parallax]")).forEach((el) => {
-          el.style.transform = `translate3d(0, ${y * parseFloat(el.dataset.parallax)}px, 0)`;
+
+      // Only animate the hero parallax while it is actually near the viewport.
+      if (!RM && y < innerHeight * 1.2) {
+        parallaxEls.forEach((el) => {
+          const factor = Number(el.dataset.parallax);
+          if (Number.isFinite(factor)) el.style.transform = `translate3d(0,${y * factor}px,0)`;
         });
       }
-      /* scrollspy */
+
       let cur = "";
-      ["specialist", "services", "reels", "booking", "info", "instagram", "contacts"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= innerHeight * 0.42) cur = id;
-      });
-      $$(".nav a, .mobile-menu nav a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + cur));
+      for (const el of spySections) {
+        if (el.getBoundingClientRect().top <= innerHeight * 0.42) cur = el.id;
+      }
+      $$(".nav a, .mobile-menu nav a").forEach((a) =>
+        a.classList.toggle("active", a.getAttribute("href") === "#" + cur)
+      );
       lastY = y;
       ticking = false;
     };
-    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    addEventListener("scroll", () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+    }, { passive: true });
     onScroll();
   }
 
@@ -1104,31 +1114,27 @@
 })();
 
 
-/* ===== SITE 2 — MICRO INTERACTIONS v2 ===== */
+/* ===== SITE 2 — MICRO INTERACTIONS v3 / PERFORMANCE SYNC ===== */
 (()=>{
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const ready=()=>{
-    if(document.querySelector('.site2-progress')===null){
-      const bar=document.createElement('div');bar.className='site2-progress';document.body.appendChild(bar);
-      const update=()=>{const max=document.documentElement.scrollHeight-innerHeight;bar.style.transform='scaleX('+(max>0?scrollY/max:0)+')'};
-      addEventListener('scroll',update,{passive:true});update();
-    }
-    if(!reduce && !document.querySelector('.site2-spotlight')){
-      const spot=document.createElement('div');spot.className='site2-spotlight';document.body.appendChild(spot);
-      let raf=0,x=0,y=0;
-      addEventListener('pointermove',e=>{x=e.clientX;y=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{spot.style.left=x+'px';spot.style.top=y+'px';spot.style.opacity='1';raf=0})},{passive:true});
-      addEventListener('pointerleave',()=>spot.style.opacity='0');
-    }
-    if(!reduce){
-      const candidates=[...document.querySelectorAll('section,.service-card,.contact-card,.hours-card,.book-card,.ig-item,.hero-card,.reel-card,.faq-item')];
-      candidates.forEach((el,i)=>{if(el.dataset.site2Reveal)return;el.dataset.site2Reveal='1';el.classList.add('site2-reveal');el.style.setProperty('--reveal-delay',Math.min(i%6,5)*55+'ms')});
-      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -35px'});
-      document.querySelectorAll('.site2-reveal').forEach(el=>io.observe(el));
-      document.querySelectorAll('.section-title').forEach(el=>{const o=new IntersectionObserver(es=>{if(es[0].isIntersecting){el.classList.add('site2-active');o.disconnect()}},{threshold:.7});o.observe(el)});
-      document.addEventListener('click',e=>{const b=e.target.closest('button,.btn,.btn-primary,.btn-ghost,.chip,.tab');if(!b)return;const r=b.getBoundingClientRect();const s=document.createElement('span');s.className='site2-ripple';s.style.left=(e.clientX-r.left)+'px';s.style.top=(e.clientY-r.top)+'px';b.appendChild(s);setTimeout(()=>s.remove(),750)},{passive:true});
-      document.querySelectorAll('[data-tilt],.hero-card.float,.ig-item,.service-card').forEach(el=>{el.classList.add('site2-tilt');el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;el.style.transform='perspective(900px) rotateX('+(-py*4)+'deg) rotateY('+(px*5)+'deg) translateY(-4px)'},{passive:true});el.addEventListener('pointerleave',()=>{el.style.transform=''},{passive:true})});
-      document.querySelectorAll('img').forEach(img=>{if(img.closest('.site2-image'))return;const wrap=img.closest('.hero-card,.ig-item,.reel-card,.portfolio-item');if(wrap)wrap.classList.add('site2-image')});
-    }
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce) return;
+
+  // Keep a single lightweight scroll progress indicator. The main progress bar
+  // remains untouched, so the visual language and existing CSS are preserved.
+  let bar=document.querySelector(".site2-progress");
+  if(!bar){
+    bar=document.createElement("div");
+    bar.className="site2-progress";
+    document.body.appendChild(bar);
+  }
+  let raf=0;
+  const update=()=>{
+    raf=0;
+    const max=document.documentElement.scrollHeight-innerHeight;
+    bar.style.transform="scaleX("+(max>0?scrollY/max:0)+")";
   };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+  addEventListener("scroll",()=>{if(!raf) raf=requestAnimationFrame(update)},{passive:true});
+  addEventListener("resize",update,{passive:true});
+  update();
 })();
+;
