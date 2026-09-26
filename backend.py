@@ -296,7 +296,7 @@ def create_session(conn, user_id: int) -> str:
 
 
 def public_user(row):
-    return {k: row[k] for k in ("id", "name", "email", "phone", "role", "language", "created_at") if k in row.keys()}
+    return {k: row[k] for k in ("id", "name", "email", "phone", "role", "language", "avatar_data", "created_at") if k in row.keys()}
 
 
 def verify_google_credential(credential: str):
@@ -401,7 +401,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     if not user or not user["password_hash"] or not password_ok(data.get("password", ""), user["password_hash"]):
                         return self.json(401, {"error": "Неверный email или пароль"})
                     token = create_session(conn, user["id"])
-                    return self.json(200, {"user": public_user(user)}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL}")
+                    return self.json(200, {"user": public_user(user)}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/google":
                     claims = verify_google_credential(data.get("credential", ""))
                     if not claims:
