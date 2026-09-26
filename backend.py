@@ -61,6 +61,8 @@ ALLOWED_ORIGINS = {
     "https://camila-whzj.onrender.com",
     "https://camilla-sfci.onrender.com",
     "https://camilla-beauty-studio.onrender.com",
+    "https://camilla-c464.vercel.app",
+    "https://camilla-z1ux.vercel.app",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 }
@@ -393,7 +395,7 @@ class APIHandler(BaseHTTPRequestHandler):
                         return self.json(409, {"error": "Этот номер телефона уже зарегистрирован."})
                     cur = conn.execute("INSERT INTO users(name,email,phone,password_hash,language) VALUES(?,?,?,?,?)", (name, email, phone, password_hash(password), data.get("language", "ru")))
                     token = create_session(conn, cur.lastrowid)
-                    return self.json(201, {"user": public_user(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL}")
+                    return self.json(201, {"user": public_user(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/login":
                     user = conn.execute("SELECT * FROM users WHERE email=?", (data.get("email", "").strip().lower(),)).fetchone()
                     if not user or not user["password_hash"] or not password_ok(data.get("password", ""), user["password_hash"]):
@@ -420,7 +422,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     token = create_session(conn, user["id"])
                     return self.json(200, {"user": public_user(user)}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/logout":
-                    self.logout(conn); return self.json(204, {}, "camilla_session=; Path=/; Max-Age=0")
+                    self.logout(conn); return self.json(204, {}, "camilla_session=; Path=/; Secure; SameSite=None; Max-Age=0")
                 user = self.current_user(conn)
                 if path == "/api/profile":
                     if not user:
