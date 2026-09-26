@@ -10,6 +10,10 @@ services:
     envVars:
       - key: CAMILLA_GOOGLE_CLIENT_ID
         sync: false
+      - key: CAMILLA_OWNER_PASSWORD
+        sync: false
+      - key: CAMILLA_DB_PATH
+        value: /var/data/camilla.sqlite3
       - key: CAMILLA_SMTP_HOST
         sync: false
       - key: CAMILLA_SMTP_PORT
