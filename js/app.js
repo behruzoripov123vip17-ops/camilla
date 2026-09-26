@@ -854,6 +854,7 @@
   /* ============ LIGHTBOX ============ */
   function lightbox() {
     const lb = $("#lightbox"), img = $("#lightbox img");
+    if (!lb || !img) return;
     document.addEventListener("click", (e) => {
       const a = e.target.closest("[data-lightbox]");
       if (a) {
@@ -968,7 +969,10 @@
       if (e.target.closest("#bookBack")) { B.step = Math.max(1, B.step - 1); renderBookingStep(); return; }
       if (e.target.closest("#restart")) { Object.assign(B, { step: 1, services: [], date: null, time: null, name: "", contact: "", comment: "" }); renderBookingStep(); return; }
       if (e.target.closest("#copyMsg")) {
-        navigator.clipboard?.writeText(bookingMessage()).then(() => toast(t("book.copied"))).catch(() => toast(bookingMessage()));
+        const msg = bookingMessage();
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(msg).then(() => toast(t("book.copied"))).catch(() => toast(msg));
+        } else toast(msg);
         return;
       }
       if (e.target.closest("#sendTg")) {
@@ -988,7 +992,7 @@
         })})
           .then(() => {
             localStorage.setItem("camilla_last_booking", JSON.stringify({date:B.date,time:B.time,services:B.services,name:B.name,number:bookingNumber(),contact:B.contact}));
-            navigator.clipboard.writeText(bookingMessage()).catch(() => {});
+            if (navigator.clipboard?.writeText) navigator.clipboard.writeText(bookingMessage()).catch(() => {});
             loadOccupiedBookings();
             toast("Запись сохранена");
             window.open(CONFIG.telegramURL, "_blank", "noopener");
@@ -1081,7 +1085,12 @@
     }, { passive:true });
     hero.addEventListener("pointerleave", () => { tx = 0; ty = 0; }, { passive:true });
     raf = requestAnimationFrame(render);
-    addEventListener("pagehide", () => cancelAnimationFrame(raf), { once:true });
+    const stop = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
+    addEventListener("pagehide", stop, { once:true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      else if (!raf) raf = requestAnimationFrame(render);
+    });
   }
 
   /* ============ INIT ============ */
