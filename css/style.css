@@ -2016,3 +2016,25 @@ body:before{
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+\n\n/* ===== CAMILLA MOBILE PERFORMANCE PATCH ===== */
+@media (pointer: coarse) {
+  .noise { display:none; }
+  .bg .orb { animation:none; filter:blur(55px); }
+  .kb { animation:none; }
+  .ticker-track,.marquee-track { animation-duration:60s; }
+  .hero-card.float { animation:none; }
+  .site2-spotlight { display:none!important; }
+  .site2-progress { display:none!important; }
+  .brush-particle { display:none!important; }
+  .reel-track { will-change:auto; }
+  #header, .mobile-menu, .book-card, .hours-card, .contact-card, .sched, .service-card, .ig-item {
+    backdrop-filter:none;
+  }
+}
+@media (max-width: 700px) {
+  .noise { display:none; }
+  .hero::before, .section::after { filter:none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .noise { display:none; }
+}
