@@ -418,6 +418,26 @@
 
   async function loadUser() {
     try { currentUser = (await api("/api/auth/me")).user; } catch (_) { currentUser = null; }
+    syncAccountButton();
+  }
+
+  function syncAccountButton() {
+    const btn = $("#accountBtn"), img = btn && $("img", btn);
+    if (!img) return;
+    img.src = currentUser?.avatar_data || "images/account-icon.png";
+    img.alt = currentUser?.name || "Аккаунт";
+    btn.classList.toggle("has-avatar", Boolean(currentUser?.avatar_data));
+  }
+
+  function trackVisit() {
+    try {
+      let key = localStorage.getItem("camilla_visitor_key");
+      if (!key) {
+        key = crypto.randomUUID ? crypto.randomUUID() : `1790446396367-${Math.random()}`;
+        localStorage.setItem("camilla_visitor_key", key);
+      }
+      fetch("/api/analytics/visit", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({visitor_key:key}), keepalive:true}).catch(()=>{});
+    } catch (_) {}
   }
 
   function serviceById(id) { return SERVICES.find((s) => s.id === id); }
@@ -1096,6 +1116,7 @@
   /* ============ INIT ============ */
   function init() {
     siteLoader();
+    trackVisit();
     renderMedia();
     splitHero();
     heroMotion();
