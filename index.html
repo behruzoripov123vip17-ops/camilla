@@ -82,7 +82,7 @@
         <button class="lang-btn" data-lang="en">EN</button>
       </div>
       <a class="btn btn-primary btn-sm magnet" href="#booking" data-i18n="cta.book">Забронировать место</a>
-      <button id="accountBtn" class="account-button btn btn-ghost btn-sm" type="button" aria-label="Аккаунт" title="Аккаунт"><img src="images/account-icon-24.png" alt="" width="20" height="20"></button>
+      <button id="accountBtn" class="account-button btn btn-ghost btn-sm" type="button" aria-label="Аккаунт" title="Аккаунт"><img src="images/account-icon.png" alt="" width="20" height="20"></button>
       <button id="burger" class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
     </div>
   </header>
@@ -359,10 +359,22 @@
     </div>
   </div>
   <div id="profileModal" class="auth-modal" aria-hidden="true">
-    <div class="auth-card admin-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="auth-card admin-card profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
       <button id="profileClose" class="auth-close" type="button" aria-label="Закрыть">×</button>
       <p class="eyebrow small"><span class="line"></span><span>MY ACCOUNT</span></p>
-      <h3 id="profileTitle">Мои записи</h3>
+      <div class="profile-head">
+        <div class="profile-avatar-wrap">
+          <img id="profileAvatar" class="profile-avatar" src="images/user.png" alt="Аватар">
+          <label class="avatar-upload"><input id="avatarInput" type="file" accept="image/*"><span>Изменить фото</span></label>
+        </div>
+        <div><h3 id="profileTitle">Мой аккаунт</h3><p id="profileEmail" class="muted"></p></div>
+      </div>
+      <div class="profile-fields">
+        <label><span>Имя</span><input id="profileName" type="text" maxlength="100"></label>
+        <label><span>Телефон</span><input id="profilePhone" type="tel" maxlength="40"></label>
+        <button id="profileSave" class="btn btn-primary" type="button">Сохранить профиль</button>
+      </div>
+      <div class="profile-bookings-head"><span>Мои записи</span><small>История сохраняется в аккаунте</small></div>
       <div id="profileBookings" class="admin-bookings"></div>
       <button id="profileLogout" class="auth-switch" type="button">Выйти из аккаунта</button>
     </div>
