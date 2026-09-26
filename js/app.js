@@ -830,6 +830,10 @@
       if (!window.google?.accounts?.id) return false;
       window.google.accounts.id.initialize({
         client_id: clientId,
+        auto_select: false,
+        use_fedcm_for_button: true,
+        button_auto_select: false,
+        context: "signin",
         callback: async (response) => {
           try {
             const data = await api("/api/auth/google", {
