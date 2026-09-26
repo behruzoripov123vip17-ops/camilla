@@ -365,6 +365,13 @@ class APIHandler(BaseHTTPRequestHandler):
         with db() as conn:
             try:
                 data = self.body()
+                if path == "/api/analytics/visit":
+                    visitor_key = str(data.get("visitor_key", "")).strip()[:160]
+                    if visitor_key:
+                        day = datetime.now().date().isoformat()
+                        conn.execute("INSERT OR IGNORE INTO site_visits(visit_day, visitor_key) VALUES(?, ?)", (day, visitor_hash(visitor_key, day)))
+                    return self.json(204, {})
+
                 if path == "/api/auth/register":
                     name = str(data.get("name", "")).strip()
                     phone = str(data.get("phone", "")).strip()
@@ -415,6 +422,20 @@ class APIHandler(BaseHTTPRequestHandler):
                 if path == "/api/auth/logout":
                     self.logout(conn); return self.json(204, {}, "camilla_session=; Path=/; Max-Age=0")
                 user = self.current_user(conn)
+                if path == "/api/profile":
+                    if not user:
+                        return self.json(401, {"error": "Войдите в аккаунт"})
+                    name = str(data.get("name", user["name"])).strip()[:100] or user["name"]
+                    phone = str(data.get("phone", user["phone"] or "")).strip()[:40]
+                    avatar_data = str(data.get("avatar_data", user["avatar_data"] or "")).strip()
+                    if avatar_data and (not avatar_data.startswith("data:image/") or len(avatar_data) > 900_000):
+                        return self.json(400, {"error": "Аватар должен быть изображением размером до 700 КБ"})
+                    try:
+                        conn.execute("UPDATE users SET name=?, phone=?, avatar_data=? WHERE id=?", (name, phone, avatar_data, user["id"]))
+                    except sqlite3.IntegrityError:
+                        return self.json(409, {"error": "Этот номер телефона уже используется"})
+                    fresh = conn.execute("SELECT * FROM users WHERE id=?", (user["id"],)).fetchone()
+                    return self.json(200, {"user": public_user(fresh)})
                 if not user: return self.json(401, {"error": "Войдите в аккаунт"})
                 if path == "/api/admin/bookings/status":
                     if user["role"] != "ADMIN": return self.json(403, {"error": "Доступ только для администратора"})
