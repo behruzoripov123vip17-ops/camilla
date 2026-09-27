@@ -405,7 +405,9 @@
   async function api(path, options = {}) {
     const base = CONFIG.apiBase || "";
     const url = base ? base + path : path;
+    const token = sessionStorage.getItem("camilla_session_token") || "";
     const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const res = await fetch(url, { credentials: "include", ...options, headers });
     const text = await res.text();
     let data = {};
@@ -714,6 +716,8 @@
           : { email, password, language: lang };
         const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
         currentUser = data.user;
+        if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
+        syncAccountButton();
         modal.classList.remove("on");
         modal.setAttribute("aria-hidden", "true");
         if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
@@ -725,6 +729,8 @@
     $("#profileLogout")?.addEventListener("click", async () => {
       try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch (_) {}
       currentUser = null;
+      sessionStorage.removeItem("camilla_session_token");
+      syncAccountButton();
       $("#profileModal")?.classList.remove("on");
       toast("Вы вышли из аккаунта");
     });
@@ -841,6 +847,8 @@
               body: JSON.stringify({ credential: response.credential, language: lang })
             });
             currentUser = data.user;
+            if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
+            syncAccountButton();
             $("#authModal")?.classList.remove("on");
             toast(currentUser?.role === "ADMIN" ? "Вход выполнен: администратор" : "Вход через Google выполнен");
           } catch (err) {
