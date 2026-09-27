@@ -810,6 +810,7 @@
               body: JSON.stringify({ credential: response.credential, language: lang })
             });
             currentUser = data.user;
+            if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
             $("#authModal")?.classList.remove("on");
             toast(currentUser?.role === "ADMIN" ? "Вход выполнен: администратор" : "Вход через Google выполнен");
           } catch (err) {
