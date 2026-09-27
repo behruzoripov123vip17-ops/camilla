@@ -426,7 +426,7 @@
   function syncAccountButton() {
     const btn = $("#accountBtn"), img = btn && $("img", btn);
     if (!img) return;
-    img.src = currentUser?.avatar_data || "images/account-icon.png";
+    img.src = currentUser?.avatar_data || "images/account-icon.svg";
     img.alt = currentUser?.name || "Аккаунт";
     btn.classList.toggle("has-avatar", Boolean(currentUser?.avatar_data));
   }
@@ -715,12 +715,13 @@
           ? { name, phone, email, password, language: lang }
           : { email, password, language: lang };
         const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
-        currentUser = data.user;
+        currentUser = data?.user || null;
+        if (!currentUser) throw new Error("Сервер не вернул данные аккаунта. Обновите страницу и попробуйте снова.");
         if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
         syncAccountButton();
         modal.classList.remove("on");
         modal.setAttribute("aria-hidden", "true");
-        if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
+        if (currentUser?.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
         else toast(register ? "Аккаунт создан — продолжите запись" : "Вход выполнен");
       } catch (err) { $("#authError").textContent = err.message; }
     });
@@ -846,7 +847,8 @@
               method: "POST",
               body: JSON.stringify({ credential: response.credential, language: lang })
             });
-            currentUser = data.user;
+            currentUser = data?.user || null;
+            if (!currentUser) throw new Error("Google не вернул данные аккаунта.");
             if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
             syncAccountButton();
             $("#authModal")?.classList.remove("on");
