@@ -395,7 +395,8 @@
   async function api(path, options = {}) {
     const base = CONFIG.apiBase || "";
     const url = base ? base + path : path;
-    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    const sessionToken = sessionStorage.getItem("camilla_session_token") || "";
+    const headers = { "Content-Type": "application/json", ...(sessionToken ? { "Authorization": "Bearer " + sessionToken } : {}), ...(options.headers || {}) };
     const res = await fetch(url, { credentials: "include", ...options, headers });
     const text = await res.text();
     let data = {};
@@ -684,6 +685,7 @@
           : { email, password, language: lang };
         const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
         currentUser = data.user;
+        if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
         modal.classList.remove("on");
         modal.setAttribute("aria-hidden", "true");
         if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
@@ -695,6 +697,7 @@
     $("#profileLogout")?.addEventListener("click", async () => {
       try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch (_) {}
       currentUser = null;
+      sessionStorage.removeItem("camilla_session_token");
       $("#profileModal")?.classList.remove("on");
       toast("Вы вышли из аккаунта");
     });
