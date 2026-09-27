@@ -647,6 +647,11 @@
       }
       showAuth();
     });
+    // Keep native HTML validation in sync with the visible auth mode.
+    const initialRegister = card.classList.contains("register");
+    $("#authPhone")?.toggleAttribute("required", initialRegister);
+    $("#authPasswordConfirm")?.toggleAttribute("required", initialRegister);
+    $("#authConsent")?.toggleAttribute("required", initialRegister);
     $("#authClose")?.addEventListener("click", () => { modal.classList.remove("on"); modal.setAttribute("aria-hidden", "true"); });
     $("#authSwitch").addEventListener("click", () => {
       const register = !card.classList.contains("register");
@@ -655,9 +660,15 @@
       $("#authSubmit").textContent = register ? "Зарегистрироваться" : "Войти";
       $("#authSwitch").textContent = register ? "У меня уже есть аккаунт" : "Создать аккаунт";
       $("#authPassword").autocomplete = register ? "new-password" : "current-password";
-      $("#authPhone")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
-      $("#authPasswordConfirm")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
-      $("#authConsent")?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      const phoneField = $("#authPhone");
+      const confirmField = $("#authPasswordConfirm");
+      const consentField = $("#authConsent");
+      phoneField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      confirmField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      consentField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
+      if (phoneField) phoneField.required = register;
+      if (confirmField) confirmField.required = register;
+      if (consentField) consentField.required = register;
     });
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
