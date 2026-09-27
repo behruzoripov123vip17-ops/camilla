@@ -438,7 +438,7 @@
         key = crypto.randomUUID ? crypto.randomUUID() : `1790446396367-${Math.random()}`;
         localStorage.setItem("camilla_visitor_key", key);
       }
-      fetch("/api/analytics/visit", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({visitor_key:key}), keepalive:true}).catch(()=>{});
+      api("/api/analytics/visit", {method:"POST", body:JSON.stringify({visitor_key:key})}).catch(()=>{});
     } catch (_) {}
   }
 
