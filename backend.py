@@ -358,8 +358,13 @@ class APIHandler(BaseHTTPRequestHandler):
         return json.loads(self.rfile.read(length) or b"{}")
 
     def current_user(self, conn):
-        raw = self.headers.get("Cookie", "")
-        token = next((v.strip() for v in raw.split(";") if v.strip().startswith("camilla_session=")), "").split("=", 1)[-1]
+        auth = self.headers.get("Authorization", "")
+        token = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+        if not token:
+            raw = self.headers.get("Cookie", "")
+            token = next((v.strip() for v in raw.split(";") if v.strip().startswith("camilla_session=")), "").split("=", 1)[-1]
+        if not token:
+            return None
         return conn.execute("SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>?", (token, int(time.time()))).fetchone()
 
     def do_POST(self):
@@ -395,13 +400,13 @@ class APIHandler(BaseHTTPRequestHandler):
                         return self.json(409, {"error": "Этот номер телефона уже зарегистрирован."})
                     cur = conn.execute("INSERT INTO users(name,email,phone,password_hash,language) VALUES(?,?,?,?,?)", (name, email, phone, password_hash(password), data.get("language", "ru")))
                     token = create_session(conn, cur.lastrowid)
-                    return self.json(201, {"user": public_user(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone())}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
+                    return self.json(201, {"user": public_user(conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()), "session_token": token}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/login":
                     user = conn.execute("SELECT * FROM users WHERE email=?", (data.get("email", "").strip().lower(),)).fetchone()
                     if not user or not user["password_hash"] or not password_ok(data.get("password", ""), user["password_hash"]):
                         return self.json(401, {"error": "Неверный email или пароль"})
                     token = create_session(conn, user["id"])
-                    return self.json(200, {"user": public_user(user)}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
+                    return self.json(200, {"user": public_user(user), "session_token": token}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/google":
                     claims = verify_google_credential(data.get("credential", ""))
                     if not claims:
@@ -420,7 +425,7 @@ class APIHandler(BaseHTTPRequestHandler):
                         user = conn.execute("SELECT * FROM users WHERE id=?", (cur.lastrowid,)).fetchone()
                     user = conn.execute("SELECT * FROM users WHERE id=?", (user["id"],)).fetchone()
                     token = create_session(conn, user["id"])
-                    return self.json(200, {"user": public_user(user)}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL}")
+                    return self.json(200, {"user": public_user(user), "session_token": token}, f"camilla_session={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_TTL}")
                 if path == "/api/auth/logout":
                     self.logout(conn); return self.json(204, {}, "camilla_session=; Path=/; Secure; SameSite=None; Max-Age=0")
                 user = self.current_user(conn)
