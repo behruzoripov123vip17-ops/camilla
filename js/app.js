@@ -230,10 +230,10 @@
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
     const brush = $("#brushCursor");
     if (!brush) return;
-    let lastSparkle = 0;
+    let lastSparkle = 0, pointerX = 0, pointerY = 0, cursorFrame = 0;
     const sparkle = (x,y) => {
       const now=performance.now();
-      if(now-lastSparkle<110) return;
+      if(now-lastSparkle<150) return;
       lastSparkle=now;
       const p=document.createElement("span");
       p.className="brush-particle";
@@ -245,9 +245,14 @@
       document.body.appendChild(p); setTimeout(()=>p.remove(),520);
     };
     document.addEventListener("mousemove",e=>{
-      brush.style.opacity="1";
-      brush.style.transform="translate("+(e.clientX-6)+"px,"+(e.clientY-6)+"px)";
-      sparkle(e.clientX,e.clientY);
+      pointerX=e.clientX; pointerY=e.clientY;
+      if(cursorFrame) return;
+      cursorFrame=requestAnimationFrame(()=>{
+        brush.style.opacity="1";
+        brush.style.transform="translate("+(pointerX-6)+"px,"+(pointerY-6)+"px)";
+        sparkle(pointerX,pointerY);
+        cursorFrame=0;
+      });
     },{passive:true});
     document.addEventListener("mouseleave",()=>brush.style.opacity="0");
     document.addEventListener("mouseenter",()=>brush.style.opacity="1");
@@ -277,12 +282,18 @@
   function magnetic() {
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
     $$(".magnet").forEach((el) => {
+      let frame = 0, px = 0, py = 0;
       el.addEventListener("mousemove", (e) => {
-        const r = el.getBoundingClientRect();
-        const dx = (e.clientX - r.left - r.width / 2) / r.width;
-        const dy = (e.clientY - r.top - r.height / 2) / r.height;
-        el.style.transform = `translate(${dx * 14}px,${dy * 10}px)`;
-      });
+        px=e.clientX; py=e.clientY;
+        if(frame) return;
+        frame=requestAnimationFrame(()=>{
+          const r = el.getBoundingClientRect();
+          const dx = (px - r.left - r.width / 2) / r.width;
+          const dy = (py - r.top - r.height / 2) / r.height;
+          el.style.transform = `translate(${dx * 14}px,${dy * 10}px)`;
+          frame=0;
+        });
+      }, {passive:true});
       el.addEventListener("mouseleave", () => { el.style.transform = ""; });
     });
   }
@@ -291,12 +302,18 @@
   function tilt() {
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
     $$("[data-tilt]").forEach((el) => {
+      let frame = 0, px = 0, py = 0;
       el.addEventListener("mousemove", (e) => {
-        const r = el.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        const py = (e.clientY - r.top) / r.height - 0.5;
-        el.style.transform = `perspective(900px) rotateY(${px * 8}deg) rotateX(${-py * 8}deg) translateY(-4px)`;
-      });
+        px=e.clientX; py=e.clientY;
+        if(frame) return;
+        frame=requestAnimationFrame(()=>{
+          const r = el.getBoundingClientRect();
+          const x = (px - r.left) / r.width - 0.5;
+          const y = (py - r.top) / r.height - 0.5;
+          el.style.transform = `perspective(900px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) translateY(-4px)`;
+          frame=0;
+        });
+      }, {passive:true});
       el.addEventListener("mouseleave", () => { el.style.transform = ""; });
     });
   }
