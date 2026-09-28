@@ -1590,7 +1590,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9997;
 .site2-reveal{opacity:0;transform:translateY(26px) scale(.985);filter:blur(3px);transition:opacity .8s var(--site2-ease),transform .8s var(--site2-ease),filter .8s var(--site2-ease);transition-delay:var(--reveal-delay,0ms)}
 .site2-reveal.is-visible{opacity:1;transform:none;filter:none}
 .site2-image{overflow:hidden}.site2-image img{transform:scale(1.001);transition:transform 1.1s var(--site2-ease),filter 1.1s var(--site2-ease)}.site2-image:hover img{transform:scale(1.075);filter:saturate(1.08) contrast(1.03)}
-button,.btn,.chip,.tab,.row-book,.contact-card,.ig-item,.hero-card,.book-card,.service-card{will-change:transform}
 .btn,.btn-primary,.btn-ghost{position:relative;overflow:hidden;isolation:isolate}
 .btn::after,.btn-primary::after,.btn-ghost::after{content:"";position:absolute;inset:-2px;border-radius:inherit;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.20) 48%,transparent 68%);transform:translateX(-130%);transition:transform .75s var(--site2-ease);pointer-events:none}
 .btn:hover::after,.btn-primary:hover::after,.btn-ghost:hover::after{transform:translateX(130%)}
