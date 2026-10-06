@@ -2241,3 +2241,26 @@ body{
   .hero::after{animation:none}
   .btn-primary::before{display:none}
 }
+
+/* ---------- Editorial refresh: warm, quiet luxury ---------- */
+:root{
+  --bg:#fbf7f2; --bg2:#f2e9e1; --panel:#fffdf9; --panel2:#efe0d5;
+  --ink:#2d201d; --muted:#796b65; --faint:#a28f86;
+  --acc:#ad5f73; --acc2:#7f394e; --acc3:#d38a9b; --pink:#f3d9d6;
+  --line:rgba(79,48,39,.13); --line2:rgba(113,65,55,.24);
+  --disp:"Noto Serif JP",Georgia,serif; --body:"Manrope",system-ui,sans-serif;
+}
+body{background-color:var(--bg);background-image:radial-gradient(circle at 84% 8%,rgba(230,193,184,.46),transparent 27rem),radial-gradient(circle at 4% 42%,rgba(238,220,202,.65),transparent 30rem);color:var(--ink)}
+.bg{opacity:.34;filter:saturate(.5)}.noise{opacity:.025;mix-blend-mode:multiply}
+#header,#header.scrolled{background:rgba(251,247,242,.82);border-bottom:1px solid rgba(79,48,39,.08);backdrop-filter:blur(18px) saturate(1.1)}
+.logo-mark{color:var(--acc2);border-color:rgba(127,57,78,.22);border-radius:50%;background:rgba(255,253,249,.78)}.logo-text{letter-spacing:.1em;color:var(--ink)}.logo-text b,.nav a{color:var(--muted)}.nav a:hover,.nav a.active{color:var(--acc2)}.nav a::after{background:var(--acc3)}
+h1,h2,h3{font-weight:500;letter-spacing:-.04em}h1{font-size:clamp(3rem,6vw,5.5rem);max-width:10ch}.eyebrow,.spec-role{color:var(--acc2)}.hero-sub,.muted,.spec-bio{color:var(--muted)}
+.btn{font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px}.btn-primary{background:var(--acc2);box-shadow:0 10px 24px rgba(127,57,78,.18)}.btn-primary:hover{background:#68283a;box-shadow:0 15px 30px rgba(127,57,78,.25)}.btn-ghost{background:rgba(255,253,249,.65);border-color:var(--line2);color:var(--ink)}.btn-ghost:hover{background:#fff}
+.hero-card{border-color:rgba(255,253,249,.9);box-shadow:0 28px 55px rgba(75,45,36,.18)}.hero-card.main{border-radius:180px 180px 22px 22px;box-shadow:0 28px 55px rgba(75,45,36,.18)!important}.hero-card.float{border-radius:100px 100px 14px 14px}.hero-badge{background:rgba(255,253,249,.84);border-color:rgba(127,57,78,.18);color:var(--acc2)}
+.ticker{background:#2d201d;border-color:#2d201d}.ticker-track span,.marquee-track span{color:#f5ddd7;font-family:var(--body);font-size:11px;font-weight:700}.section::before{background:linear-gradient(90deg,transparent,rgba(127,57,78,.15),transparent)!important}
+.spec-photo{border:8px solid rgba(255,253,249,.9);border-radius:160px 160px 24px 24px;box-shadow:0 24px 55px rgba(75,45,36,.14)!important}.sched,.book-card,.week-board,.hours-card{background:rgba(255,253,249,.72)!important;border-color:var(--line)!important;box-shadow:0 22px 54px rgba(75,45,36,.09)!important}
+.table,.contact-card{background:rgba(255,253,249,.65);border-color:var(--line)}.tr.th{background:#f1e3da;color:var(--acc2)}.tr:not(.th):hover{background:rgba(211,138,155,.1)!important;box-shadow:inset 3px 0 0 var(--acc3)!important}.tab{border-color:var(--line);background:rgba(255,253,249,.42);color:var(--muted)}.tab.on{background:var(--acc2);border-color:var(--acc2);color:#fff;box-shadow:0 6px 16px rgba(127,57,78,.18)!important}
+.reel-card{border-color:rgba(255,253,249,.9);box-shadow:0 22px 48px rgba(75,45,36,.18)}.reel-card:hover{box-shadow:0 18px 42px rgba(75,45,36,.2)!important}.reel-card figcaption{background:rgba(255,253,249,.84);border-color:rgba(127,57,78,.14);color:var(--acc2)}.reel-card figcaption span{color:var(--ink)}
+.contact-card:hover{border-color:var(--acc3)!important;box-shadow:0 15px 40px rgba(75,45,36,.14)!important}.cc-icon{background:linear-gradient(135deg,var(--acc3),var(--acc2));box-shadow:0 10px 22px rgba(127,57,78,.2)}footer{border-top-color:var(--line);background:rgba(239,224,213,.35)}
+.mobile-bar{background:rgba(255,253,249,.92);color:var(--ink)}.totop{background:rgba(255,253,249,.9);color:var(--acc2)}.toast{background:rgba(45,32,29,.94)}::-webkit-scrollbar-track{background:#f2e9e1}::-webkit-scrollbar-thumb{background:rgba(127,57,78,.35)}
+@media(max-width:700px){.hero-card.main{border-radius:120px 120px 18px 18px}.spec-photo{border-radius:120px 120px 20px 20px}h1{font-size:clamp(2.75rem,14vw,4rem)}}
