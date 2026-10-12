@@ -5,7 +5,8 @@
   const names = {day:"сегодня", week:"за 7 дней", month:"за 30 дней"};
   const money = (value) => `${Number(value || 0).toLocaleString("ru-RU")} сум`;
   const escape = (value) => String(value || "—").replace(/[&<>"']/g, (x) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[x]));
-  async function api(path, options = {}) { const res = await fetch(path, {headers:{"Content-Type":"application/json"}, ...options}); const data = res.status === 204 ? {} : await res.json(); if (!res.ok) throw new Error(data.error || "Ошибка"); return data; }
+  const API_BASE = "https://camilla-beauty-studio.onrender.com";
+  async function api(path, options = {}) { const token=sessionStorage.getItem("camilla_session_token")||""; const res = await fetch(API_BASE + path, {credentials:"include",headers:{"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})}, ...options}); const data = res.status === 204 ? {} : await res.json(); if (!res.ok) throw new Error(data.error || "Ошибка"); return data; }
   function dateLabel(iso) { return new Date(iso).toLocaleString("ru-RU", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}); }
   function statusLabel(value) { return ({PENDING:"Ожидает",CONFIRMED:"Подтверждена",CANCELLED:"Отменена",COMPLETED:"Завершена"}[value] || value); }
   async function render() {

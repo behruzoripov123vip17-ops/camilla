@@ -893,6 +893,7 @@ html a,html button,html input,html select,html textarea{cursor:none!important}
 
 /* ===== CAMILLA stability patch 2026-09-24 ===== */
 #siteLoader.site-loader { z-index:10000; }
+.account-welcome{position:fixed;inset:0;z-index:20000;display:grid;place-content:center;gap:11px;padding:28px;text-align:center;background:rgba(39,20,34,.44);backdrop-filter:blur(10px);opacity:0;transition:opacity .35s;color:#3f2430}.account-welcome.on{opacity:1}.account-welcome:before{content:"";position:absolute;inset:22% 12%;z-index:-1;border-radius:48% 48% 42% 42%;background:radial-gradient(circle,#fffdf9,#f3d8df);box-shadow:0 24px 90px rgba(78,29,49,.35);animation:welcome-bloom .8s var(--spring) both}.account-welcome div,.account-welcome b{color:#9b4f68;font-family:var(--jp);letter-spacing:.2em}.account-welcome strong{font:800 clamp(21px,4vw,36px)/1.18 var(--disp)}.account-welcome span{font-weight:700;color:#765866}@keyframes welcome-bloom{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 #brushCursor.brush-cursor { z-index:10001; pointer-events:none; }
 .cursor-dot,.cursor-ring { display:none!important; visibility:hidden!important; opacity:0!important; pointer-events:none!important; }
 @media(pointer:fine){ html,body,a,button,input,select,textarea { cursor:none!important; } }

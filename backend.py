@@ -550,8 +550,10 @@ class APIHandler(BaseHTTPRequestHandler):
                 unique_today = conn.execute("SELECT COUNT(*) FROM site_visits WHERE visit_day=date('now')").fetchone()[0]
                 return self.json(200, {"period": period, "summary": dict(totals), "visits": visits, "unique_today": unique_today, "services": [dict(x) for x in services], "bookings": [dict(x) for x in rows], "upcoming": [dict(x) for x in upcoming], "tomorrow": [dict(x) for x in tomorrow]})
             if path == "/api/bookings":
-                rows = conn.execute("SELECT b.*, s.name service_name FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.user_id=? ORDER BY b.starts_at DESC", (user["id"],))
-                return self.json(200, {"bookings": [dict(x) for x in rows]})
+                rows = conn.execute("SELECT b.*, s.name service_name, s.price_uzs FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.user_id=? ORDER BY b.starts_at DESC", (user["id"],)).fetchall()
+                total = sum(x["price_uzs"] for x in rows if x["status"] != "CANCELLED")
+                paid = sum(x["price_uzs"] for x in rows if x["status"] != "CANCELLED" and x["payment_status"] == "PAID")
+                return self.json(200, {"bookings": [dict(x) for x in rows], "summary": {"count": len(rows), "total": total, "paid": paid}})
             if path == "/api/notifications":
                 rows = conn.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC", (user["id"],))
                 return self.json(200, {"notifications": [dict(x) for x in rows]})

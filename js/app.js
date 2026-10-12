@@ -672,6 +672,15 @@
     modal.classList.add("on"); modal.setAttribute("aria-hidden", "false");
   }
 
+  function welcomeAccount() {
+    const el = document.createElement("div");
+    el.className = "account-welcome";
+    el.innerHTML = "<div>✦ 花 ✦</div><b>おめでとうございます</b><strong>Поздравляем с новым аккаунтом!</strong><span>Ваша история записей теперь сохранена.</span>";
+    document.body.appendChild(el);
+    try { const C=window.AudioContext||window.webkitAudioContext, c=new C(); [523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(.001,c.currentTime+i*.1);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+i*.1+.02);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.1+.35);o.connect(g).connect(c.destination);o.start(c.currentTime+i*.1);o.stop(c.currentTime+i*.1+.38);});setTimeout(()=>c.close(),900);}catch(_){}
+    requestAnimationFrame(()=>el.classList.add("on")); setTimeout(()=>location.assign("account.html"),1800);
+  }
+
   async function showAdmin() {
     const modal = $("#adminModal"), list = $("#adminBookings");
     if (!modal || !list) return;
@@ -688,11 +697,7 @@
     if (!modal) return;
     $("#accountBtn")?.addEventListener("click", () => {
       if (currentUser?.role === "ADMIN") return showAdmin();
-      if (currentUser) {
-        const profile = $("#profileModal");
-        if (profile) { profile.classList.add("on"); profile.setAttribute("aria-hidden", "false"); loadProfile(); }
-        return;
-      }
+      if (currentUser) return location.assign("account.html");
       showAuth();
     });
     $("#authClose")?.addEventListener("click", () => { modal.classList.remove("on"); modal.setAttribute("aria-hidden", "true"); });
@@ -739,7 +744,8 @@
         modal.classList.remove("on");
         modal.setAttribute("aria-hidden", "true");
         if (currentUser?.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
-        else toast(register ? "Аккаунт создан — продолжите запись" : "Вход выполнен");
+        else if (register) welcomeAccount();
+        else location.assign("account.html");
       } catch (err) { $("#authError").textContent = err.message; }
     });
     $("#adminClose")?.addEventListener("click", () => $("#adminModal").classList.remove("on"));
