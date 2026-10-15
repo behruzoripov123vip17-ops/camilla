@@ -7,3 +7,12 @@ __pycache__/
 .DS_Store
 .venv/
 venv/
+
+# Databases and private runtime state (never commit customer records)
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.db
+!*.example.db
+.env*
+!.env.example
