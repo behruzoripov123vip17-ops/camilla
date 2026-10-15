@@ -43,6 +43,13 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             return APIHandler.do_POST(self)
         self.send_error(404)
 
+    def do_OPTIONS(self):
+        # Browsers preflight cross-origin JSON requests. Forward API preflights
+        # to the API handler so its origin allowlist and CORS policy apply.
+        if self.path.startswith("/api/"):
+            return APIHandler.do_OPTIONS(self)
+        self.send_error(404)
+
 
 def main() -> None:
     init_db()
