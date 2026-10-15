@@ -9,7 +9,7 @@
     instagramURL: "https://www.instagram.com/shakhlo_nails",
     telegramURL: "https://t.me/shahloNailSTUDIO",
     tz: "Asia/Tashkent",
-    apiBase: (document.querySelector('meta[name="camilla-api"]')?.content || window.CAMILLA_API_BASE || "").replace(/\/$/, "")
+    apiBase: (document.querySelector('meta[name="camilla-api"]')?.content || window.CAMILLA_API_BASE || "https://camilla-beauty-studio.onrender.com").replace(/\/$/, "")
   };
   window.CAMILLA_CONFIG = CONFIG;
 
