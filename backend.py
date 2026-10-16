@@ -444,9 +444,8 @@ class APIHandler(BaseHTTPRequestHandler):
                         return self.json(409, {"error": "Этот номер телефона уже используется"})
                     fresh = conn.execute("SELECT * FROM users WHERE id=?", (user["id"],)).fetchone()
                     return self.json(200, {"user": public_user(fresh)})
-                if not user: return self.json(401, {"error": "Войдите в аккаунт"})
                 if path == "/api/admin/bookings/status":
-                    if user["role"] != "ADMIN": return self.json(403, {"error": "Доступ только для администратора"})
+                    if not user or user["role"] != "ADMIN": return self.json(403, {"error": "Доступ только для администратора"})
                     status = data.get("status")
                     payment_status = data.get("payment_status")
                     if status not in (None, "CONFIRMED", "CANCELLED", "COMPLETED") or payment_status not in (None, "PAID", "UNPAID"):
@@ -492,11 +491,26 @@ class APIHandler(BaseHTTPRequestHandler):
                     contact = str(data.get("contact", "")).strip()[:120]
                     if not contact:
                         return self.json(400, {"error": "Укажите телефон или Telegram для подтверждения записи"})
-                    cur = conn.execute("INSERT INTO bookings(user_id,specialist_id,service_id,starts_at,ends_at,notes,contact) VALUES(?,?,?,?,?,?,?)", (user["id"], *required, data.get("notes", ""), contact))
+                    if user:
+                        user_id = user["id"]
+                        customer_name = user["name"]
+                    else:
+                        customer_name = str(data.get("name", "Клиент")).strip()[:100] or "Клиент"
+                        digits = re.sub(r'\D', '', contact)
+                        phone_key = f"+{digits}" if len(digits) >= 7 else f"guest_{int(datetime.now().timestamp()*1000)}"
+                        user_row = conn.execute("SELECT * FROM users WHERE phone=?", (phone_key,)).fetchone()
+                        if not user_row:
+                            guest_email = f"guest_{int(datetime.now().timestamp()*1000)}@camilla.local"
+                            cur_u = conn.execute("INSERT INTO users(name, phone, email, role) VALUES(?,?,?,?)",
+                                                 (customer_name, phone_key, guest_email, 'USER'))
+                            user_id = cur_u.lastrowid
+                        else:
+                            user_id = user_row["id"]
+                    cur = conn.execute("INSERT INTO bookings(user_id,specialist_id,service_id,starts_at,ends_at,notes,contact) VALUES(?,?,?,?,?,?,?)", (user_id, *required, data.get("notes", ""), contact))
                     service = conn.execute("SELECT name FROM services WHERE id=?", (data["service_id"],)).fetchone()
                     owner = conn.execute("SELECT id FROM users WHERE role='ADMIN' ORDER BY id LIMIT 1").fetchone()
                     if owner:
-                        message = f"Новая запись: {user['name']} — {service['name'] if service else data['service_id']}, {starts_at.strftime('%d.%m.%Y %H:%M')}. Контакт: {contact or 'не указан'}"
+                        message = f"Новая запись: {customer_name} — {service['name'] if service else data['service_id']}, {starts_at.strftime('%d.%m.%Y %H:%M')}. Контакт: {contact or 'не указан'}"
                         conn.execute("INSERT INTO notifications(user_id,kind,message) VALUES(?,?,?)", (owner["id"], "NEW_BOOKING", message))
                         send_owner_email("CAMILLA: новая запись", message)
                     return self.json(201, {"id": cur.lastrowid, "status": "PENDING"})

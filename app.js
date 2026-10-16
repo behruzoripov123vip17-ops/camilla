@@ -439,21 +439,30 @@
     return out;
   }
   function timeLabel(minutes) { return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`; }
-  function isOccupied(date, start, duration) {
-    const day = isoDate(date), startsAt = start * 60;
-    return occupiedBookings.some((booking) => booking.starts_at.slice(0, 10) === day &&
-      Number(booking.starts_at.slice(11, 13)) * 60 + Number(booking.starts_at.slice(14, 16)) < startsAt + duration &&
-      Number(booking.ends_at.slice(11, 13)) * 60 + Number(booking.ends_at.slice(14, 16)) > startsAt);
+  function isOccupied(date, startMinutes, duration) {
+    const day = isoDate(date);
+    return occupiedBookings.some((booking) => {
+      if (booking.starts_at.slice(0, 10) !== day) return false;
+      const bStart = Number(booking.starts_at.slice(11, 13)) * 60 + Number(booking.starts_at.slice(14, 16));
+      const bEnd = Number(booking.ends_at.slice(11, 13)) * 60 + Number(booking.ends_at.slice(14, 16));
+      return bStart < startMinutes + duration && bEnd > startMinutes;
+    });
   }
   function slotsFor(date) {
     const duration = totalMinutes();
-    if (duration === 120) return [540, 780, 900].filter((start) => !isOccupied(date, start, duration));
-    const slots = [];
-    for (let start = 540; start + duration <= 1080; start += 30) {
-      if (start < 780 && start + duration > 720) continue;
-      if (!isOccupied(date, start, duration)) slots.push(start);
+    const now = tashkentNow();
+    const isToday = isoDate(date) === isoDate(now);
+    const minStart = isToday ? now.getHours() * 60 + now.getMinutes() + 20 : 0;
+    let available = [];
+    if (duration === 120) {
+      available = [540, 780, 900].filter((start) => start >= minStart && !isOccupied(date, start, duration));
+    } else {
+      for (let start = 540; start + duration <= 1080; start += 30) {
+        if (start < 780 && start + duration > 720) continue;
+        if (start >= minStart && !isOccupied(date, start, duration)) available.push(start);
+      }
     }
-    return slots;
+    return available;
   }
   async function loadOccupiedBookings() {
     try { occupiedBookings = (await api("/api/bookings/occupied")).bookings || []; renderBookingStep(); }
@@ -534,12 +543,47 @@
     const defNameHint = t("book.nameHint") || "Имя и фамилия (только буквы, от 2 символов)";
     const defContactHint = t("book.contactHint") || "Реальный номер (+998...) или Telegram ник (@username)";
 
+    function formatContact(val) {
+      if (!val) return "";
+      if (val.startsWith("@")) {
+        return "@" + val.slice(1).replace(/[^a-zA-Z0-9_]/g, "").slice(0, 32);
+      }
+      let d = val.replace(/\D/g, "");
+      if (!d) return "";
+      if (d.startsWith("998")) {
+        d = d.slice(0, 12);
+      } else if (d.length <= 9 && (d.startsWith("9") || d.startsWith("3") || d.startsWith("8") || d.startsWith("7") || d.startsWith("5"))) {
+        d = ("998" + d).slice(0, 12);
+      } else {
+        d = d.slice(0, 14);
+      }
+      let res = "+998";
+      if (d.length > 3) res += " (" + d.slice(3, 5);
+      if (d.length >= 5) res += ") " + d.slice(5, 8);
+      if (d.length >= 8) res += "-" + d.slice(8, 10);
+      if (d.length >= 10) res += "-" + d.slice(10, 12);
+      return res;
+    }
+
+    function formatName(val) {
+      return val.replace(/[^a-zA-Zа-яА-ЯёЁўЎқҚғҒҳҲ\s\-']/g, "")
+                .replace(/(^|\s|-)([a-zа-яёўқғҳ])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+    }
+
     nameInput.addEventListener("input", () => {
+      const formatted = formatName(nameInput.value);
+      if (formatted !== nameInput.value) nameInput.value = formatted;
       B.name = nameInput.value;
       checkField(nameInput, validateName, nameStatus, nameMsg, defNameHint);
     });
 
     contactInput.addEventListener("input", () => {
+      // If user is actively typing digits, format as mask
+      const isPhone = !contactInput.value.startsWith("@");
+      if (isPhone && /\d/.test(contactInput.value)) {
+        const formatted = formatContact(contactInput.value);
+        if (formatted && formatted !== contactInput.value) contactInput.value = formatted;
+      }
       B.contact = contactInput.value;
       checkField(contactInput, validateContact, contactStatus, contactMsg, defContactHint);
     });
@@ -683,19 +727,169 @@
     return L.join("\n");
   }
 
+  function telegramBookingUrl() {
+    return `${CONFIG.telegramURL}?text=${encodeURIComponent(bookingMessage())}`;
+  }
+
+  function downloadCalendarEvent() {
+    const svcs = selectedServices();
+    const svcName = svcs.map(s => s.name[lang] || s.name.ru).join(", ");
+    const startIso = `${B.date}T${B.time}:00`;
+    const startD = new Date(startIso);
+    const endD = new Date(startD.getTime() + totalMinutes() * 60000);
+    const pad = n => String(n).padStart(2, "0");
+    const fmt = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//CAMILLA Studio//Booking//RU",
+      "CALSCALE:GREGORIAN",
+      "BEGIN:VEVENT",
+      `UID:CAM-${B.bookingNo || Date.now()}@camilla.uz`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(startD)}`,
+      `DTEND:${fmt(endD)}`,
+      `SUMMARY:CAMILLA: ${svcName}`,
+      `DESCRIPTION:Запись в салон красоты CAMILLA / SHahlo Nails. Мастер: Шахло Сайтова. Запись #${bookingNumber()}. Телефон: +998 94 121 54 44`,
+      "LOCATION:CAMILLA Beauty Studio",
+      "STATUS:CONFIRMED",
+      "BEGIN:VALARM",
+      "TRIGGER:-PT2H",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Напоминание о записи в салон красоты",
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `camilla-booking-${bookingNumber()}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Запись добавлена в файл календаря ✓");
+  }
+
+  function renderBookingSuccess() {
+    const panel = $("#bookPanels");
+    if (!panel) return;
+    $("#bookNext").style.display = "none";
+    $("#bookBack").style.display = "none";
+    $("#bookStepTitle").textContent = "Запись оформлена!";
+    $("#bookStepNo").textContent = "✓";
+
+    const svcs = selectedServices();
+    const svcName = svcs.map(s => s.name[lang] || s.name.ru).join(", ");
+    const d = new Date(B.date + "T12:00:00");
+    const dateFormatted = d.toLocaleDateString(loc(), { weekday: "long", day: "numeric", month: "long" });
+
+    panel.innerHTML = `
+      <div class="voucher-wrap anim">
+        <div class="voucher-card">
+          <div class="voucher-badge">✨ ЗАПИСЬ СФОРМИРОВАНА</div>
+          <h3 class="voucher-title">${esc(svcName)}</h3>
+          <p class="muted" style="font-size:13px">Студия красоты CAMILLA · Мастер Шахло Сайтова</p>
+
+          <div class="voucher-code-wrap">
+            <div>
+              <span class="voucher-code-label">Номер записи</span>
+              <div class="voucher-code-val">#${bookingNumber()}</div>
+            </div>
+            <button id="copyVoucherBtn" class="btn btn-ghost btn-sm" type="button" title="Скопировать код">📋 Скопировать</button>
+          </div>
+
+          <ul class="voucher-details">
+            <li><span>Дата</span><b>${dateFormatted}</b></li>
+            <li><span>Время</span><b>${B.time} (${Math.floor(totalMinutes()/60)} ч ${totalMinutes()%60 ? totalMinutes()%60 + " мин" : ""})</b></li>
+            <li><span>Имя клиента</span><b>${esc(B.name)}</b></li>
+            <li><span>Контакт</span><b>${esc(B.contact)}</b></li>
+            <li><span>Стоимость</span><b>${nf(totalPrice())} сум</b></li>
+            <li><span>Статус</span><b style="color:#7ee2a8">🟢 Ожидает подтверждения</b></li>
+          </ul>
+
+          <div class="voucher-actions">
+            <a href="${telegramBookingUrl()}" target="_blank" rel="noopener" class="btn-tg-action">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9.04 15.31l-.38 5.35c.54 0 .78-.23 1.06-.5l2.55-2.44 5.28 3.87c.97.53 1.66.25 1.92-.9l3.48-16.3c.31-1.44-.51-2-1.46-1.65L1.6 10.62c-1.4.55-1.38 1.33-.24 1.68l5.2 1.62L18.6 6.3c.57-.37 1.08-.17.66.2L9.04 15.31z"/></svg>
+              <span>Отправить мастеру в Telegram</span>
+            </a>
+
+            <button id="addCalBtn" class="btn-cal-action" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Добавить в Календарь (Apple / Google)</span>
+            </button>
+
+            <div class="voucher-sub-actions">
+              <a href="tel:+998941215444" class="btn-sub-action">
+                <span>📞 Позвонить</span>
+              </a>
+              <button id="rebookBtn" class="btn-sub-action" type="button">
+                <span>🔄 Новая запись</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    sparkles($(".voucher-card"));
+    observeReveals(panel);
+  }
+
   async function saveBooking(openTelegram) {
-    if (!currentUser) {
-      toast("Чтобы подтвердить запись, войдите через иконку аккаунта");
-      $("#accountBtn")?.focus();
-      return;
-    }
     const startMinutes = Number(B.time.slice(0, 2)) * 60 + Number(B.time.slice(3, 5));
     const endTime = timeLabel(startMinutes + totalMinutes());
-    await api("/api/bookings", { method: "POST", body: JSON.stringify({ specialist_id: 1, service_id: B.services[0], starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`, name: B.name, notes: B.comment, contact: B.contact, language: lang }) });
-    await loadOccupiedBookings();
-    toast("Запись сохранена — владелец получил уведомление");
-    // Keep the visitor on the booking card; no automatic scroll or redirect here.
-    if (openTelegram) window.open(CONFIG.telegramURL, "_blank", "noopener");
+
+    // Save to local storage history
+    try {
+      const history = JSON.parse(localStorage.getItem("camilla_local_bookings") || "[]");
+      history.unshift({
+        bookingNo: bookingNumber(),
+        service: selectedServices().map(s => s.name[lang] || s.name.ru).join(", "),
+        date: B.date,
+        time: B.time,
+        price: totalPrice(),
+        name: B.name,
+        contact: B.contact,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem("camilla_local_bookings", JSON.stringify(history.slice(0, 20)));
+    } catch (_) {}
+
+    // Send to API backend
+    let savedToApi = false;
+    try {
+      await api("/api/bookings", {
+        method: "POST",
+        body: JSON.stringify({
+          specialist_id: 1,
+          service_id: B.services[0],
+          starts_at: `${B.date}T${B.time}`,
+          ends_at: `${B.date}T${endTime}`,
+          name: B.name,
+          notes: B.comment,
+          contact: B.contact,
+          language: lang
+        })
+      });
+      savedToApi = true;
+      loadOccupiedBookings().catch(() => {});
+    } catch (err) {
+      console.warn("API booking:", err.message);
+    }
+
+    toast(savedToApi ? "Запись успешно сохранена в студии ✓" : "Запись сформирована ✓");
+    renderBookingSuccess();
+
+    if (openTelegram) {
+      setTimeout(() => {
+        window.open(telegramBookingUrl(), "_blank", "noopener");
+      }, 500);
+    }
   }
 
   function toast(msg) {
@@ -989,10 +1183,17 @@
         renderBookingStep();
         return;
       }
-      if (e.target.closest("#bookBack")) { B.step = Math.max(1, B.step - 1); renderBookingStep(); return; }
-      if (e.target.closest("#restart")) { Object.assign(B, { step: 1, services: [], date: null, time: null, name: "", contact: "", comment: "" }); renderBookingStep(); return; }
-      if (e.target.closest("#copyMsg")) {
-        navigator.clipboard.writeText(bookingMessage()).then(() => toast(t("book.copied")));
+      if (e.target.closest("#restart, #rebookBtn")) {
+        Object.assign(B, { step: 1, services: [], date: null, time: null, name: "", contact: "", comment: "", bookingNo: null });
+        renderBookingStep();
+        return;
+      }
+      if (e.target.closest("#copyMsg, #copyVoucherBtn")) {
+        navigator.clipboard.writeText(bookingMessage()).then(() => toast("Детали записи скопированы ✓"));
+        return;
+      }
+      if (e.target.closest("#addCalBtn")) {
+        downloadCalendarEvent();
         return;
       }
       if (e.target.closest("#submitBooking, #sendTg")) {
@@ -1058,7 +1259,7 @@
     events();
     loadUser();
     loadOccupiedBookings();
-    setInterval(() => { renderStatus(); renderWeekSchedule(); }, 1000);
+    setInterval(() => { renderStatus(); }, 3000);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
