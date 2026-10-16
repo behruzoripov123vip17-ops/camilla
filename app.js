@@ -577,7 +577,12 @@
       checkField(nameInput, validateName, nameStatus, nameMsg, defNameHint);
     });
 
-    contactInput.addEventListener("input", () => {
+    contactInput.addEventListener("input", (e) => {
+      if (e.inputType && e.inputType.startsWith("delete")) {
+        B.contact = contactInput.value;
+        checkField(contactInput, validateContact, contactStatus, contactMsg, defContactHint);
+        return;
+      }
       // If user is actively typing digits, format as mask
       const isPhone = !contactInput.value.startsWith("@");
       if (isPhone && /\d/.test(contactInput.value)) {
@@ -1110,6 +1115,38 @@
     /* language */
     $$(".lang-btn").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
 
+    /* background music toggle */
+    const music = $("#siteMusic");
+    const mBtn = $("#musicToggle");
+    if (music && mBtn) {
+      music.volume = 0.28;
+      let playing = false;
+      const toggleMusic = () => {
+        if (playing) {
+          music.pause();
+          playing = false;
+          mBtn.classList.remove("playing");
+          toast("Музыка на паузе");
+        } else {
+          music.play().then(() => {
+            playing = true;
+            mBtn.classList.add("playing");
+            toast("Воспроизведение музыки ♫");
+          }).catch(() => {});
+        }
+      };
+      mBtn.addEventListener("click", toggleMusic);
+      const startOnGesture = () => {
+        if (!playing) {
+          music.play().then(() => {
+            playing = true;
+            mBtn.classList.add("playing");
+          }).catch(() => {});
+        }
+      };
+      document.addEventListener("pointerdown", startOnGesture, { once: true, passive: true });
+    }
+
     /* tabs */
     $("#catTabs").addEventListener("click", (e) => {
       const b = e.target.closest(".tab");
@@ -1132,7 +1169,24 @@
       if (e.target.closest("#weekNext")) { weekOffset++; renderWeekSchedule(); return; }
       if (e.target.closest("#weekToday")) { weekOffset=0; renderWeekSchedule(); return; }
       const pickS = e.target.closest("[data-pick-service]");
-      if (pickS) { const id = pickS.dataset.pickService; B.services = B.services[0] === id ? [] : [id]; B.date = null; B.time = null; toast(serviceById(id).friday ? "Access Bars принимается только по пятницам" : "По пятницам принимается только Access Bars"); renderBookingStep(); return; }
+      if (pickS) {
+        const id = pickS.dataset.pickService;
+        const svc = serviceById(id);
+        if (B.services[0] === id) {
+          B.services = [];
+        } else {
+          B.services = [id];
+          if (svc && svc.friday) {
+            toast("Access Bars: сеансы проводятся по пятницам");
+          } else if (svc) {
+            toast((svc.name[lang] || svc.name.ru) + " ✓");
+          }
+        }
+        B.date = null;
+        B.time = null;
+        renderBookingStep();
+        return;
+      }
       const pickD = e.target.closest("[data-pick-date]");
       if (pickD && !pickD.disabled) { B.date = pickD.dataset.pickDate; B.time = null; renderBookingStep(); return; }
       const pickT = e.target.closest("[data-pick-time]");
