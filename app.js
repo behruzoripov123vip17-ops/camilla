@@ -70,7 +70,7 @@
 
   /* ============ I18N ============ */
   let lang = localStorage.getItem("camilla_lang") || "ru";
-  if (!window.I18N?.[lang]) lang = "ru";
+  if (!window.I18N[lang]) lang = "ru";
   const t = (k) => (window.I18N[lang] && window.I18N[lang][k]) || window.I18N.ru[k] || k;
   const loc = () => ({ ru: "ru-RU", uz: "uz-UZ", en: "en-US" }[lang]);
 
@@ -220,44 +220,57 @@
     });
   }
 
-  /* ============ CUSTOM CURSOR ============ */
+  /* ============ CUSTOM BRUSH CURSOR ============ */
   function cursor() {
-    // Disabled: the brush is the only custom cursor.
-  }
-
-  /* ============ BRUSH CURSOR ============ */
-  function brushCursor() {
     if (RM || !window.matchMedia("(pointer:fine)").matches) return;
     const brush = $("#brushCursor");
     if (!brush) return;
+
     let lastSparkle = 0;
-    const sparkle = (x,y) => {
-      const now=performance.now();
-      if(now-lastSparkle<110) return;
-      lastSparkle=now;
-      const p=document.createElement("span");
-      p.className="brush-particle";
-      const size=4+Math.random()*6;
-      p.style.width=size+"px"; p.style.height=size+"px";
-      p.style.left=(x-2)+"px"; p.style.top=(y-2)+"px";
-      p.style.setProperty("--dx",((Math.random()-.5)*28)+"px");
-      p.style.setProperty("--dy",((Math.random()-.5)*28+14)+"px");
-      document.body.appendChild(p); setTimeout(()=>p.remove(),520);
-    };
-    document.addEventListener("mousemove",e=>{
-      brush.style.opacity="1";
-      brush.style.transform="translate("+(e.clientX-6)+"px,"+(e.clientY-6)+"px)";
-      sparkle(e.clientX,e.clientY);
-    },{passive:true});
-    document.addEventListener("mouseleave",()=>brush.style.opacity="0");
-    document.addEventListener("mouseenter",()=>brush.style.opacity="1");
-    document.addEventListener("mouseover",e=>{
-      const hit=e.target.closest("a,button,input,select,textarea,.chip,.tab,.tr,[data-tilt],.ig-item,.row-book");
-      brush.classList.toggle("hovering",!!hit);
+    function createSparkle(x, y) {
+      if (RM) return;
+      const now = performance.now();
+      if (now - lastSparkle < 55) return;
+      lastSparkle = now;
+      const p = document.createElement("span");
+      p.className = "brush-particle";
+      const size = 4 + Math.random() * 6;
+      p.style.width = size + "px";
+      p.style.height = size + "px";
+      p.style.left = (x - 2) + "px";
+      p.style.top = (y - 2) + "px";
+      p.style.setProperty("--dx", ((Math.random() - 0.5) * 28) + "px");
+      p.style.setProperty("--dy", ((Math.random() - 0.5) * 28 + 14) + "px");
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 650);
+    }
+
+    addEventListener("mousemove", (e) => {
+      brush.style.opacity = "1";
+      brush.style.transform = `translate(${e.clientX - 6}px, ${e.clientY - 6}px)`;
+      createSparkle(e.clientX, e.clientY);
     });
-    document.addEventListener("mousedown",()=>brush.classList.add("clicking"));
-    document.addEventListener("mouseup",()=>brush.classList.remove("clicking"));
+
+    document.addEventListener("mouseleave", () => {
+      brush.style.opacity = "0";
+    });
+    document.addEventListener("mouseenter", () => {
+      brush.style.opacity = "1";
+    });
+
+    document.addEventListener("mouseover", (e) => {
+      const hit = e.target.closest("a,button,.chip,.tr,[data-tilt],input,textarea,.tab,.lang-btn,.ig-item,.row-book");
+      brush.classList.toggle("hovering", !!hit);
+    });
+
+    document.addEventListener("mousedown", () => {
+      brush.classList.add("clicking");
+    });
+    document.addEventListener("mouseup", () => {
+      brush.classList.remove("clicking");
+    });
   }
+
   /* ============ RIPPLE (click feedback) ============ */
   function ripple() {
     document.addEventListener("pointerdown", (e) => {
@@ -305,7 +318,6 @@
   function scrollFx() {
     const header = $("#header"), bar = $(".progress i"), totop = $("#totop"), barMobile = $(".mobile-bar");
     let lastY = 0, ticking = false;
-    if (!header || !bar || !totop) return;
     const onScroll = () => {
       const y = scrollY;
       const max = document.documentElement.scrollHeight - innerHeight;
@@ -316,10 +328,10 @@
       totop.classList.toggle("show", y > 900);
       const bk = $("#booking");
       const inBook = bk && y + innerHeight * 0.6 > bk.offsetTop && y < bk.offsetTop + bk.offsetHeight;
-      if (barMobile) barMobile.classList.toggle("show", y > 700 && !inBook);
+      barMobile.classList.toggle("show", y > 700 && !inBook);
       /* hero parallax */
       if (y < innerHeight * 1.2 && !RM) {
-        $("[data-parallax]").forEach((el) => {
+        $$("[data-parallax]").forEach((el) => {
           el.style.transform = `translate3d(0, ${y * parseFloat(el.dataset.parallax)}px, 0)`;
         });
       }
@@ -380,9 +392,10 @@
   }
   function renderStatus() {
     const s = statusNow();
+    const timeStr = tashkentNow().toLocaleTimeString(loc(), { hour: '2-digit', minute: '2-digit' });
     $$("[data-status]").forEach((el) => {
       el.dataset.state = s;
-      el.innerHTML = `<i></i>${t("status." + s)}`;
+      el.innerHTML = `<i></i>${t("status." + s)} <span>· ${timeStr}</span>`;
     });
   }
 
@@ -395,14 +408,11 @@
   async function api(path, options = {}) {
     const base = CONFIG.apiBase || "";
     const url = base ? base + path : path;
-    const sessionToken = sessionStorage.getItem("camilla_session_token") || "";
-    const headers = { "Content-Type": "application/json", ...(sessionToken ? { "Authorization": "Bearer " + sessionToken } : {}), ...(options.headers || {}) };
-    const res = await fetch(url, { credentials: "include", ...options, headers });
-    const text = await res.text();
-    let data = {};
-    try { data = text ? JSON.parse(text) : {}; } catch (_) {
-      throw new Error(res.ok ? "Сервер вернул некорректный ответ" : "Сервер недоступен");
-    }
+    const token = sessionStorage.getItem("camilla_session_token") || "";
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(url, { headers, ...options });
+    const data = res.status === 204 ? {} : await res.json();
     if (!res.ok) throw new Error(data.error || "Request failed");
     return data;
   }
@@ -415,13 +425,6 @@
   function selectedServices() { return B.services.map(serviceById).filter(Boolean); }
   function totalMinutes() { const service = serviceById(B.services[0]); return service ? (service.dur.m || service.dur.h * 60) : 120; }
   function totalPrice() { return selectedServices().reduce((n, s) => n + s.price.a, 0); }
-  function validContact(value) {
-    const v = String(value || "").trim();
-    if (!v) return false;
-    if (/^@[A-Za-z0-9_]{5,32}$/.test(v)) return true;
-    const digits = v.replace(/\D/g, "");
-    return digits.length >= 9 && digits.length <= 15;
-  }
   const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   let occupiedBookings = [];
 
@@ -473,117 +476,189 @@
     })();
   }
 
+  /* ============ FORM VALIDATION HELPERS ============ */
+  function validateName(val) {
+    const v = (val || "").trim();
+    if (!v) return { valid: false, msg: t("book.errName") || "Укажите ваше имя", state: "empty" };
+    if (v.length < 2) return { valid: false, msg: "Слишком короткое имя (минимум 2 буквы)", state: "err" };
+    if (!/^[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳ\s\-']{2,50}$/.test(v)) {
+      return { valid: false, msg: "Нельзя знаки и цифры — только буквы имени", state: "err" };
+    }
+    return { valid: true, msg: "Имя заполнено верно ✓", state: "ok" };
+  }
+
+  function validateContact(val) {
+    const v = (val || "").trim();
+    if (!v) return { valid: false, msg: t("book.errContact") || "Укажите телефон или Telegram", state: "empty" };
+    if (v.startsWith("@")) {
+      if (/^@[A-Za-z0-9_]{4,32}$/.test(v)) {
+        return { valid: true, msg: "Telegram указан верно ✓", state: "ok" };
+      }
+      return { valid: false, msg: "Telegram ник от 4 символов (напр: @username)", state: "err" };
+    }
+    const digits = v.replace(/[\s\-\(\)\+]/g, "");
+    if (/^[\+]?[\d\s\-\(\)]{9,20}$/.test(v) && digits.length >= 9 && digits.length <= 15) {
+      return { valid: true, msg: "Номер телефона подтверждён ✓", state: "ok" };
+    }
+    return { valid: false, msg: "Реальный номер (+998...) или Telegram (@ник)", state: "err" };
+  }
+
+  function setupLiveValidation() {
+    const nameInput = $("#bName");
+    const contactInput = $("#bContact");
+    const commentInput = $("#bComment");
+    if (!nameInput || !contactInput) return;
+
+    function checkField(input, validator, statusEl, hintEl, defaultHint) {
+      const res = validator(input.value);
+      const wrap = input.closest(".input-wrap");
+      if (res.state === "empty") {
+        if (wrap) wrap.classList.remove("is-valid", "is-invalid");
+        if (statusEl) { statusEl.textContent = ""; statusEl.className = "field-status"; }
+        if (hintEl) { hintEl.textContent = defaultHint; hintEl.className = "field-hint"; }
+      } else if (res.valid) {
+        if (wrap) { wrap.classList.add("is-valid"); wrap.classList.remove("is-invalid"); }
+        if (statusEl) { statusEl.textContent = "✓"; statusEl.className = "field-status ok"; }
+        if (hintEl) { hintEl.textContent = res.msg; hintEl.className = "field-hint ok"; }
+      } else {
+        if (wrap) { wrap.classList.add("is-invalid"); wrap.classList.remove("is-valid"); }
+        if (statusEl) { statusEl.textContent = "✕"; statusEl.className = "field-status err"; }
+        if (hintEl) { hintEl.textContent = res.msg; hintEl.className = "field-hint err"; }
+      }
+    }
+
+    const nameStatus = $("#nameStatus");
+    const nameMsg = $("#nameMsg");
+    const contactStatus = $("#contactStatus");
+    const contactMsg = $("#contactMsg");
+    const defNameHint = t("book.nameHint") || "Имя и фамилия (только буквы, от 2 символов)";
+    const defContactHint = t("book.contactHint") || "Реальный номер (+998...) или Telegram ник (@username)";
+
+    nameInput.addEventListener("input", () => {
+      B.name = nameInput.value;
+      checkField(nameInput, validateName, nameStatus, nameMsg, defNameHint);
+    });
+
+    contactInput.addEventListener("input", () => {
+      B.contact = contactInput.value;
+      checkField(contactInput, validateContact, contactStatus, contactMsg, defContactHint);
+    });
+
+    if (commentInput) {
+      commentInput.addEventListener("input", () => {
+        B.comment = commentInput.value;
+      });
+    }
+
+    if (B.name) checkField(nameInput, validateName, nameStatus, nameMsg, defNameHint);
+    if (B.contact) checkField(contactInput, validateContact, contactStatus, contactMsg, defContactHint);
+  }
+
   function renderBookingStep() {
     const panel = $("#bookPanels");
     if (!panel) return;
-
     $$(".step-dot").forEach((d) => {
       const n = +d.dataset.step;
       d.classList.toggle("on", n === B.step);
       d.classList.toggle("done", n < B.step);
     });
-
-    const nextBtn = $("#bookNext"), backBtn = $("#bookBack");
-    if (!nextBtn || !backBtn) return;
-    nextBtn.style.display = B.step === 5 ? "none" : "";
-    backBtn.style.display = B.step === 1 ? "none" : "";
+    $("#bookNext").style.display = B.step === 5 ? "none" : "";
+    $("#bookBack").style.display = B.step === 1 ? "none" : "";
     $("#bookStepTitle").textContent = t("book.s" + B.step);
     $("#bookStepNo").textContent = String(B.step).padStart(2, "0");
 
     if (B.step === 1) {
-      panel.innerHTML = `
-        <div class="booking-stage-head">
-          <div><span class="stage-kicker">01 / SERVICE</span><h4>Выберите одну услугу</h4><p>Выберите процедуру — цена и длительность появятся сразу.</p></div>
-          <div class="booking-total"><span>Стоимость</span><b>${B.services.length ? nf(totalPrice()) + " сум" : "—"}</b></div>
-        </div>
-        <div class="booking-service-grid">
-          ${SERVICES.map((s) => `
-            <button type="button" class="booking-service-card ${B.services.includes(s.id) ? "is-selected" : ""}" data-pick-service="${s.id}">
-              <span class="booking-service-index">${s.id.toUpperCase()}</span>
-              ${s.img ? `<img src="images/${s.img}.jpg" alt="" loading="lazy">` : `<span class="booking-service-art">${s.cat === "d" ? "01" : s.cat === "p" ? "02" : "03"}</span>`}
-              <span class="booking-service-body"><small>${t("cat." + s.cat)}${s.friday ? " · FRIDAY" : ""}</small><strong>${s.name[lang]}</strong><em>${fmtDur(s.dur)} · ${fmtPrice(s.price)}</em></span>
-              <span class="booking-check">${B.services.includes(s.id) ? "✓" : "+"}</span>
-            </button>`).join("")}
-        </div>`;
+      panel.innerHTML = `<p class="booking-hint">Маникюр, педикюр и Access Bars занимают 2 часа. Для депиляции показывается её точная длительность.</p><div class="selected-total"><b>${B.services.length ? `Выбрано: ${B.services.length} · ${fmtDur(serviceById(B.services[0]).dur)}` : "Пока ничего не выбрано"}</b><span>${nf(totalPrice())} сум</span></div><div class="chips anim">${CATS.map((c) => `
+        <div class="chip-group"><h4>${t("cat." + c.id)}</h4><div class="chip-row">
+        ${SERVICES.filter((s) => s.cat === c.id).map((s) => `
+          <button class="chip ${B.services.includes(s.id) ? "on" : ""}" data-pick-service="${s.id}">
+            <b>${s.name[lang]}</b><span>${fmtPrice(s.price)}</span>
+          </button>`).join("")}
+        </div></div>`).join("")}</div>`;
     }
-
     if (B.step === 2) {
       const svc = serviceById(B.services[0]);
       panel.innerHTML = `
-        <div class="booking-stage-head">
-          <div><span class="stage-kicker">02 / DATE</span><h4>Выберите дату</h4><p>Показываются только даты, доступные для выбранной услуги.</p></div>
-          <div class="booking-selected-pill">${svc ? esc(svc.name[lang]) : "Услуга не выбрана"}</div>
-        </div>
-        <div class="booking-date-grid">
-          ${dates().map((d) => {
-            const iso = isoDate(d), fri = d.getDay() === 5, dis = svc && (svc.friday ? !fri : fri);
-            const wd = d.toLocaleDateString(loc(), { weekday: "short" });
-            const mo = d.toLocaleDateString(loc(), { month: "short" });
-            return `<button type="button" ${dis ? "disabled" : ""} class="booking-date-card ${B.date === iso ? "is-selected" : ""} ${dis ? "is-disabled" : ""}" data-pick-date="${iso}">
-              <span>${wd}</span><b>${d.getDate()}</b><small>${mo}</small>
-            </button>`;
-          }).join("")}
-        </div>`;
+        <div class="date-grid anim">${dates().map((d) => {
+          const iso = isoDate(d), fri = d.getDay() === 5, dis = svc && (svc.friday ? !fri : fri);
+          const wd = d.toLocaleDateString(loc(), { weekday: "short" });
+          const mo = d.toLocaleDateString(loc(), { month: "short" });
+          return `<button ${dis ? "disabled" : ""} class="chip date ${B.date === iso ? "on" : ""} ${dis ? "dis" : ""}" data-pick-date="${iso}">
+            <span class="wd">${wd}</span><b>${d.getDate()}</b><span class="mo">${mo}</span>
+          </button>`;
+        }).join("")}</div>`;
     }
-
     if (B.step === 3) {
       const d = B.date ? new Date(B.date + "T12:00:00") : null;
-      const slots = d ? slotsFor(d) : [];
-      panel.innerHTML = `
-        <div class="booking-stage-head">
-          <div><span class="stage-kicker">03 / TIME</span><h4>Выберите свободное время</h4><p>Занятые интервалы автоматически скрываются.</p></div>
-          <div class="booking-selected-pill">${B.date || "Дата не выбрана"}</div>
-        </div>
-        <div class="booking-time-grid">
-          ${slots.length ? slots.map((s) => `<button type="button" class="booking-time-card ${B.time === timeLabel(s) ? "is-selected" : ""}" data-pick-time="${timeLabel(s)}"><b>${timeLabel(s)}</b><span>${timeLabel(s + totalMinutes())}</span><small>Свободно</small></button>`).join("") : '<div class="booking-empty">На эту дату нет подходящего свободного времени.</div>'}
-        </div>
-        <div class="booking-hours-note"><span>09:00–18:00</span><i></i><span>перерыв 12:00–13:00</span></div>`;
+      panel.innerHTML = d ? `<div class="time-grid anim">${slotsFor(d).map((s) =>
+        `<button class="chip time ${B.time === timeLabel(s) ? "on" : ""}" data-pick-time="${timeLabel(s)}">${timeLabel(s)}–${timeLabel(s + totalMinutes())}</button>`).join("") || '<p class="empty">На эту дату свободного времени нет.</p>'}</div>`
+        : `<p class="empty">${t("book.errDate")}</p>`;
     }
-
     if (B.step === 4) {
-      panel.innerHTML = `
-        <div class="booking-stage-head">
-          <div><span class="stage-kicker">04 / CONTACT</span><h4>Ваши контакты</h4><p>Оставьте настоящие контактные данные для подтверждения записи.</p></div>
-          <div class="form-step-mark">04</div>
+      const uIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      const pIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+      const cIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+      panel.innerHTML = `<div class="form anim">
+        <div class="form-field-group">
+          <div class="field-header">
+            <span class="field-title">${t("book.name")} *</span>
+            <span id="nameStatus" class="field-status"></span>
+          </div>
+          <div class="input-wrap">
+            <i class="i-icon">${uIcon}</i>
+            <input id="bName" type="text" value="${esc(B.name)}" placeholder="Шахло Сайтова" autocomplete="name" />
+          </div>
+          <p id="nameMsg" class="field-hint">${t("book.nameHint") || "Имя и фамилия (только буквы, от 2 символов)"}</p>
         </div>
-        <div class="booking-contact-form">
-          <div class="booking-form-grid">
-            <label class="field-card"><span>Имя и фамилия *</span><input id="bName" autocomplete="name" value="${esc(B.name)}" placeholder="Например, Алиса Каримова"></label>
-            <label class="field-card"><span>Телефон или Telegram *</span><input id="bContact" name="contact" type="tel" inputmode="tel" autocomplete="tel" required value="${esc(B.contact)}" placeholder="+998 90 123 45 67 или @username"></label>
-          </div>
-          <label class="field-card field-wide"><span>Комментарий</span><textarea id="bComment" rows="4" placeholder="Дополнительные пожелания (необязательно)">${esc(B.comment)}</textarea></label>
-          <div class="booking-privacy"><span class="privacy-dot"></span><span>Данные используются только для подтверждения записи.</span></div>
-        </div>`;
-    }
 
+        <div class="form-field-group">
+          <div class="field-header">
+            <span class="field-title">${t("book.contact")} *</span>
+            <span id="contactStatus" class="field-status"></span>
+          </div>
+          <div class="input-wrap">
+            <i class="i-icon">${pIcon}</i>
+            <input id="bContact" type="text" value="${esc(B.contact)}" placeholder="+998 94 121 54 44 или @username" autocomplete="tel" />
+          </div>
+          <p id="contactMsg" class="field-hint">${t("book.contactHint") || "Реальный номер (+998...) или Telegram ник (@username)"}</p>
+        </div>
+
+        <div class="form-field-group">
+          <div class="field-header">
+            <span class="field-title">${t("book.comment")}</span>
+          </div>
+          <div class="input-wrap top-icon">
+            <i class="i-icon">${cIcon}</i>
+            <textarea id="bComment" rows="3" placeholder="Пожелания по дизайну или время...">${esc(B.comment)}</textarea>
+          </div>
+        </div>
+      </div>`;
+      setupLiveValidation();
+    }
     if (B.step === 5) {
+      const svc = serviceById(B.services[0]);
       const d = new Date(B.date + "T12:00:00");
-      panel.innerHTML = `
-        <div class="booking-final">
-          <div class="booking-final-mark">✓</div>
-          <span class="stage-kicker">05 / CONFIRM</span>
-          <h4>Проверьте запись</h4>
-          <p class="booking-final-sub">Всё готово. Перед отправкой проверьте дату, время и контакт.</p>
-          <div class="booking-summary-grid">
-            <div><span>Услуга</span><b>${esc(selectedServices().map((s) => s.name[lang]).join(", ") || "—")}</b></div>
-            <div><span>Дата</span><b>${d.toLocaleDateString(loc(), { weekday: "long", day: "numeric", month: "long" })}</b></div>
-            <div><span>Время</span><b>${esc(B.time || "—")}</b></div>
-            <div><span>Стоимость</span><b>${nf(totalPrice())} сум</b></div>
-            <div><span>Клиент</span><b>${esc(B.name)}</b></div>
-            <div><span>Контакт</span><b>${esc(B.contact)}</b></div>
-          </div>
-          <div class="booking-final-actions">
-            <button class="btn btn-primary" id="sendTg" type="button">Подтвердить и сохранить</button>
-            <button class="btn btn-ghost" id="copyMsg" type="button">Скопировать детали</button>
-          </div>
-          <p class="booking-final-note">После сохранения запись появится в вашем аккаунте.</p>
-        </div>`;
-        sparkles($(".booking-final"));
+      panel.innerHTML = `<div class="summary anim">
+        <h4>${t("book.summary")}</h4>
+        <ul>
+          <li><span>${t("serv.c.service")}</span><b>${selectedServices().map((s) => s.name[lang]).join(", ") || "—"}</b></li>
+          <li><span>${t("serv.c.price")}</span><b>${nf(totalPrice())} сум · ${Math.floor(totalMinutes()/60)} ч ${totalMinutes()%60 ? totalMinutes()%60 + " мин" : ""}</b></li>
+          <li><span>${t("book.lDate")}</span><b>${d.toLocaleDateString(loc(), { weekday: "long", day: "numeric", month: "long" })}</b></li>
+          <li><span>${t("book.lTime")}</span><b>${B.time}</b></li>
+          <li><span>${t("book.name")}</span><b>${esc(B.name)}</b></li>
+          ${B.contact ? `<li><span>${t("book.contact")}</span><b>${esc(B.contact)}</b></li>` : ""}
+          ${B.comment ? `<li><span>${t("book.comment")}</span><b>${esc(B.comment)}</b></li>` : ""}
+          <li class="booking-number"><span>Номер записи</span><b>#${bookingNumber()}</b></li>
+        </ul>
+      </div>
+      <div class="booking-confirm">
+        <button id="submitBooking" class="btn btn-primary" type="button">Подтвердить запись</button>
+      </div>`;
+      sparkles($(".summary"));
     }
-
     observeReveals(panel);
+    renderWeekSchedule();
   }
-
 
   function esc(s) { return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
@@ -608,6 +683,21 @@
     return L.join("\n");
   }
 
+  async function saveBooking(openTelegram) {
+    if (!currentUser) {
+      toast("Чтобы подтвердить запись, войдите через иконку аккаунта");
+      $("#accountBtn")?.focus();
+      return;
+    }
+    const startMinutes = Number(B.time.slice(0, 2)) * 60 + Number(B.time.slice(3, 5));
+    const endTime = timeLabel(startMinutes + totalMinutes());
+    await api("/api/bookings", { method: "POST", body: JSON.stringify({ specialist_id: 1, service_id: B.services[0], starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`, name: B.name, notes: B.comment, contact: B.contact, language: lang }) });
+    await loadOccupiedBookings();
+    toast("Запись сохранена — владелец получил уведомление");
+    // Keep the visitor on the booking card; no automatic scroll or redirect here.
+    if (openTelegram) window.open(CONFIG.telegramURL, "_blank", "noopener");
+  }
+
   function toast(msg) {
     const box = $(".toasts");
     const el = document.createElement("div");
@@ -621,230 +711,148 @@
   function showAuth() {
     const modal = $("#authModal");
     if (!modal) return;
+    const card = $(".auth-card", modal);
+    card.classList.add("register");
+    $("#authTitle").textContent = "Создать аккаунт";
+    $("#authHint").textContent = "Сейчас вы в гостевом режиме. Зарегистрируйтесь по email и паролю, чтобы сохранять записи.";
+    $("#authSubmit").textContent = "Зарегистрироваться";
+    $("#authSwitch").textContent = "У меня уже есть аккаунт";
+    $("#authPassword").autocomplete = "new-password";
+    $("#authFirstName").required = true;
+    $("#authLastName").required = true;
+    renderGoogleSignIn();
     modal.classList.add("on"); modal.setAttribute("aria-hidden", "false");
   }
 
+  function playWelcomeSound() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      [523.25, 659.25, 783.99].forEach((frequency, i) => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = "sine"; osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(.0001, ctx.currentTime + i * .12);
+        gain.gain.exponentialRampToValueAtTime(.12, ctx.currentTime + i * .12 + .02);
+        gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + i * .12 + .42);
+        osc.connect(gain).connect(ctx.destination); osc.start(ctx.currentTime + i * .12); osc.stop(ctx.currentTime + i * .12 + .45);
+      });
+      setTimeout(() => ctx.close(), 1100);
+    } catch (_) {}
+  }
+
+  function welcomeAccount() {
+    const el = document.createElement("div");
+    el.className = "account-welcome";
+    el.innerHTML = '<div class="welcome-sakura" aria-hidden="true">✦ 花 ✦</div><b>おめでとうございます</b><strong>Поздравляем с новым аккаунтом!</strong><span>Теперь записи и история всегда будут под рукой.</span>';
+    document.body.appendChild(el); playWelcomeSound();
+    requestAnimationFrame(() => el.classList.add("on"));
+    setTimeout(() => { el.classList.remove("on"); setTimeout(() => el.remove(), 500); }, 4300);
+  }
+
+  async function handleGoogleCredential(response) {
+    $("#authError").textContent = "";
+    try {
+      const data = await api("/api/auth/google", { method: "POST", body: JSON.stringify({ credential: response.credential, language: lang }) });
+      currentUser = data.user;
+      $("#authModal").classList.remove("on");
+      if (currentUser.role === "ADMIN") window.location.assign("dashboard.html");
+      else toast("Вход через Google выполнен — подтвердите запись");
+    } catch (err) { $("#authError").textContent = err.message; }
+  }
+
+  async function renderGoogleSignIn() {
+    const host = $("#googleSignIn"), hint = $("#googleAuthHint");
+    if (!host || host.dataset.rendered) return;
+    try {
+      const { client_id: clientId } = await api("/api/auth/google/config");
+      if (!clientId) {
+        hint.hidden = false;
+        hint.textContent = "Вход через Google появится после настройки Google Client ID.";
+        return;
+      }
+      const draw = () => {
+        if (!window.google?.accounts?.id) return setTimeout(draw, 80);
+        window.google.accounts.id.initialize({ client_id: clientId, callback: handleGoogleCredential, auto_select: false });
+        window.google.accounts.id.renderButton(host, { theme: "outline", size: "large", text: "continue_with", shape: "pill", width: 350, locale: "ru" });
+        host.dataset.rendered = "true";
+      };
+      draw();
+    } catch (_) { hint.hidden = false; hint.textContent = "Не удалось загрузить вход через Google."; }
+  }
+
   async function showAdmin() {
-    const modal = $("#adminModal"), list = $("#adminBookings");
+    const modal = $("#adminModal"), list = $("#adminBookings"), analytics = $("#adminAnalytics"), notifications = $("#adminNotifications");
     if (!modal || !list) return;
     modal.classList.add("on"); modal.setAttribute("aria-hidden", "false");
     list.innerHTML = "<p class=\"muted\">Загружаем записи…</p>";
     try {
-      const { bookings } = await api("/api/admin/bookings");
-      list.innerHTML = bookings.length ? bookings.map((b) => `<article class="admin-booking"><b>${esc(b.service_name)}</b><span>${esc(b.starts_at.replace("T", " "))}–${esc(b.ends_at.slice(11, 16))}</span><small>${esc(b.customer_name || "Клиент")} · ${esc(b.status)}</small><div><button class="btn btn-sm btn-primary" data-admin-status="CONFIRMED" data-booking-id="${b.id}">Подтвердить</button><button class="btn btn-sm btn-ghost" data-admin-status="CANCELLED" data-booking-id="${b.id}">Отменить</button></div></article>`).join("") : "<p class=\"muted\">Записей пока нет.</p>";
+      const [{ bookings }, stats, { notifications: notices }] = await Promise.all([api("/api/admin/bookings"), api("/api/admin/analytics"), api("/api/notifications")]);
+      analytics.innerHTML = [[stats.total, "Всего записей"], [stats.pending, "Ожидают"], [stats.confirmed, "Подтверждены"], [stats.customers, "Клиенты"], [`${nf(stats.week_total)} сум`, "За 7 дней"], [`${nf(stats.paid_total)} сум`, "Оплачено"]].map(([value, label]) => `<div class="admin-metric"><b>${value}</b><span>${label}</span></div>`).join("") + (stats.weekly_services.length ? `<div class="trend-card"><b>Тренды за 7 дней</b>${stats.weekly_services.map((s) => `<span>${esc(s.name)} <strong>${s.count}</strong> · ${nf(s.amount)} сум</span>`).join("")}</div>` : "");
+      notifications.innerHTML = notices.length ? `<p class="eyebrow small"><span class="line"></span><span>НОВЫЕ УВЕДОМЛЕНИЯ · ${stats.unread_notifications}</span></p>` + notices.slice(0, 5).map((n) => `<div class="admin-notification">${esc(n.message)}<br><small>${esc(n.created_at)}</small></div>`).join("") : "";
+      list.innerHTML = bookings.length ? bookings.map((b) => `<article class="admin-booking"><b>${esc(b.service_name)} · ${nf(b.price_uzs)} сум</b><span>${esc(b.starts_at.replace("T", " "))}–${esc(b.ends_at.slice(11, 16))}</span><small>${esc(b.customer_name || "Клиент")} · ${esc(b.contact || b.customer_email || "контакт не указан")} · ${esc(b.status)} · ${b.payment_status === "PAID" ? "ОПЛАЧЕНО" : "НЕ ОПЛАЧЕНО"}</small><div><button class="btn btn-sm btn-primary" data-admin-status="CONFIRMED" data-booking-id="${b.id}">Подтвердить</button><button class="btn btn-sm btn-ghost" data-admin-status="CANCELLED" data-booking-id="${b.id}">Отменить</button><button class="btn btn-sm btn-ghost" data-payment-status="${b.payment_status === "PAID" ? "UNPAID" : "PAID"}" data-booking-id="${b.id}">${b.payment_status === "PAID" ? "Отметить неоплату" : "Оплачено"}</button></div></article>`).join("") : "<p class=\"muted\">Записей пока нет.</p>";
     } catch (err) { list.innerHTML = `<p class="auth-error">${esc(err.message)}</p>`; }
+  }
+
+  async function showProfile() {
+    const modal = $("#profileModal"), list = $("#profileBookings"), stats = $("#profileStats");
+    modal.classList.add("on"); modal.setAttribute("aria-hidden", "false");
+    list.innerHTML = "<p class=\"muted\">Загружаем ваши записи…</p>";
+    $("#profileGreeting").textContent = `Здравствуйте, ${currentUser.name}${currentUser.last_name ? ` ${currentUser.last_name}` : ""}. Здесь хранится история ваших записей.`;
+    try {
+      const { bookings, summary } = await api("/api/bookings");
+      stats.innerHTML = [[summary.count, "записей"], [`${nf(summary.total)} сум`, "сумма услуг"], [`${nf(summary.paid)} сум`, "оплачено"]].map(([value, label]) => `<div><b>${value}</b><span>${label}</span></div>`).join("");
+      list.innerHTML = bookings.length ? bookings.map((b) => `<article class="admin-booking"><b>${esc(b.service_name)} · ${nf(b.price_uzs)} сум</b><span>${esc(b.starts_at.replace("T", " "))}–${esc(b.ends_at.slice(11, 16))}</span><small>Статус: ${esc(b.status)} · ${b.payment_status === "PAID" ? "оплачено" : "ожидает оплаты"}</small></article>`).join("") : "<p class=\"muted\">У вас пока нет записей. Выберите услугу и удобное время.</p>";
+    } catch (err) { list.innerHTML = `<p class="auth-error">${esc(err.message)}</p>`; }
+  }
+
+  async function logout() {
+    await api("/api/auth/logout", { method: "POST" });
+    currentUser = null;
+    $("#profileModal")?.classList.remove("on");
+    toast("Вы вышли из аккаунта — доступен гостевой режим");
   }
 
   function authEvents() {
     const modal = $("#authModal"), form = $("#authForm"), card = $(".auth-card", modal);
     if (!modal) return;
     $("#accountBtn")?.addEventListener("click", () => {
-      if (currentUser?.role === "ADMIN") return showAdmin();
-      if (currentUser) {
-        const profile = $("#profileModal");
-        if (profile) { profile.classList.add("on"); profile.setAttribute("aria-hidden", "false"); loadProfile(); }
-        return;
-      }
+      if (currentUser?.role === "ADMIN") return window.location.assign("dashboard.html");
+      if (currentUser) return window.location.assign("account.html");
       showAuth();
     });
-    // Keep native HTML validation in sync with the visible auth mode.
-    const initialRegister = card.classList.contains("register");
-    $("#authPhone")?.toggleAttribute("required", initialRegister);
-    $("#authPasswordConfirm")?.toggleAttribute("required", initialRegister);
-    $("#authConsent")?.toggleAttribute("required", initialRegister);
-    $("#authClose")?.addEventListener("click", () => { modal.classList.remove("on"); modal.setAttribute("aria-hidden", "true"); });
+    $("#authClose").addEventListener("click", () => modal.classList.remove("on"));
     $("#authSwitch").addEventListener("click", () => {
       const register = !card.classList.contains("register");
       card.classList.toggle("register", register);
       $("#authTitle").textContent = register ? "Создать аккаунт" : "Войти в аккаунт";
+      $("#authHint").textContent = register ? "Регистрация доступна по email и паролю." : "Введите email и пароль своего аккаунта.";
       $("#authSubmit").textContent = register ? "Зарегистрироваться" : "Войти";
       $("#authSwitch").textContent = register ? "У меня уже есть аккаунт" : "Создать аккаунт";
       $("#authPassword").autocomplete = register ? "new-password" : "current-password";
-      const phoneField = $("#authPhone");
-      const confirmField = $("#authPasswordConfirm");
-      const consentField = $("#authConsent");
-      phoneField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
-      confirmField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
-      consentField?.closest("label")?.classList.toggle("auth-field-hidden", !register);
-      if (phoneField) phoneField.required = register;
-      if (confirmField) confirmField.required = register;
-      if (consentField) consentField.required = register;
+      $("#authFirstName").required = register;
+      $("#authLastName").required = register;
     });
     form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      $("#authError").textContent = "";
+      e.preventDefault(); $("#authError").textContent = "";
       const register = card.classList.contains("register");
-      const email = $("#authEmail").value.trim();
-      const password = $("#authPassword").value;
-      const name = $("#authName")?.value?.trim() || "";
-      const phone = $("#authPhone")?.value?.trim() || "";
-      const confirm = $("#authPasswordConfirm")?.value || "";
-      const consent = $("#authConsent")?.checked !== false;
-      if (register) {
-        if (!/^[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳІіЇї\s'-]{2,60}$/.test(name)) return ($("#authError").textContent = "Введите настоящее имя и фамилию.");
-        if (!/^\+?[0-9\s()\-]{9,20}$/.test(phone)) return ($("#authError").textContent = "Введите корректный номер телефона.");
-        if (!/^\S+@\S+\.\S+$/.test(email)) return ($("#authError").textContent = "Введите корректный email.");
-        if (password.length < 10 || !/[A-Za-zА-Яа-я]/.test(password) || !/[0-9]/.test(password)) return ($("#authError").textContent = "Пароль: минимум 10 символов, буквы и цифры.");
-        if (password !== confirm) return ($("#authError").textContent = "Пароли не совпадают.");
-        if (!consent) return ($("#authError").textContent = "Подтвердите согласие с условиями.");
-      } else if (!email || !password) {
-        return ($("#authError").textContent = "Введите email и пароль.");
-      }
       try {
-        const payload = register
-          ? { name, phone, email, password, language: lang }
-          : { email, password, language: lang };
-        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
-        currentUser = data.user;
-        if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
-        modal.classList.remove("on");
-        modal.setAttribute("aria-hidden", "true");
-        if (currentUser.role === "ADMIN") { toast("Вход выполнен: администратор"); showAdmin(); }
-        else toast(register ? "Аккаунт создан — продолжите запись" : "Вход выполнен");
+        const data = await api(register ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify({ name: $("#authFirstName").value, last_name: $("#authLastName").value, email: $("#authEmail").value, password: $("#authPassword").value, language: lang }) });
+        currentUser = data.user; modal.classList.remove("on");
+        if (currentUser.role === "ADMIN") { window.location.assign("dashboard.html"); }
+        else if (register) { welcomeAccount(); setTimeout(() => window.location.assign("account.html"), 1900); }
+        else window.location.assign("account.html");
       } catch (err) { $("#authError").textContent = err.message; }
     });
     $("#adminClose")?.addEventListener("click", () => $("#adminModal").classList.remove("on"));
-    $("#profileClose")?.addEventListener("click", () => $("#profileModal")?.classList.remove("on"));
-    $("#profileLogout")?.addEventListener("click", async () => {
-      try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch (_) {}
-      currentUser = null;
-      sessionStorage.removeItem("camilla_session_token");
-      $("#profileModal")?.classList.remove("on");
-      toast("Вы вышли из аккаунта");
-    });
+    $("#profileClose")?.addEventListener("click", () => $("#profileModal").classList.remove("on"));
+    $("#profileLogout")?.addEventListener("click", () => logout().catch((err) => toast(err.message)));
     $("#adminBookings")?.addEventListener("click", async (e) => {
-      const button = e.target.closest("[data-admin-status]"); if (!button) return;
-      try { await api("/api/admin/bookings/status", { method: "POST", body: JSON.stringify({ id: Number(button.dataset.bookingId), status: button.dataset.adminStatus }) }); toast("Статус записи обновлён"); showAdmin(); loadOccupiedBookings(); }
+      const button = e.target.closest("[data-admin-status], [data-payment-status]"); if (!button) return;
+      try { await api("/api/admin/bookings/status", { method: "POST", body: JSON.stringify({ id: Number(button.dataset.bookingId), status: button.dataset.adminStatus, payment_status: button.dataset.paymentStatus }) }); toast("Данные записи обновлены"); showAdmin(); loadOccupiedBookings(); }
       catch (err) { toast(err.message); }
     });
   }
 
-  async function loadProfile() {
-    const list = $("#profileBookings");
-    if (!list) return;
-    list.innerHTML = "<p class=\"muted\">Загружаем ваши записи…</p>";
-    try {
-      const { bookings } = await api("/api/bookings");
-      list.innerHTML = bookings.length ? bookings.map((b) => `<article class="admin-booking"><b>${esc(b.service_name)}</b><span>${esc(b.starts_at.replace("T", " "))}–${esc(b.ends_at.slice(11, 16))}</span><small>${esc(b.status)} · ${esc(b.contact || "")}</small></article>`).join("") : "<p class=\"muted\">Записей пока нет.</p>";
-    } catch (err) { list.innerHTML = `<p class="auth-error">${esc(err.message)}</p>`; }
-  }
-
-  function music() {
-    const audio = $("#siteMusic"), toggle = $("#musicToggle");
-    if (!audio || !toggle) return;
-
-    let mutedByUser = localStorage.getItem("camilla_music_off") === "1";
-    let pageReady = false;
-
-    const setState = (on) => {
-      toggle.classList.toggle("playing", on);
-      toggle.classList.toggle("muted", !on);
-      toggle.setAttribute("aria-pressed", String(on));
-      toggle.setAttribute("aria-label", on ? "Выключить музыку" : "Включить музыку");
-    };
-
-    audio.volume = 0.34;
-
-    const play = () => {
-      // Never start audio while the loading animation is still visible.
-      if (!pageReady || mutedByUser) return Promise.resolve(false);
-      return audio.play()
-        .then(() => { setState(true); return true; })
-        .catch(() => { setState(false); return false; });
-    };
-
-    toggle.addEventListener("click", () => {
-      if (!pageReady) return;
-      if (audio.paused) {
-        mutedByUser = false;
-        localStorage.removeItem("camilla_music_off");
-        play();
-      } else {
-        mutedByUser = true;
-        localStorage.setItem("camilla_music_off", "1");
-        audio.pause();
-        setState(false);
-      }
-    });
-
-    // Loading animation has finished: now, and only now, music may start.
-    window.addEventListener("camilla:ready", () => {
-      pageReady = true;
-      if (!mutedByUser) setTimeout(play, 180);
-    }, { once: true });
-
-    // Autoplay fallback is also locked until the loading animation is finished.
-    const unlock = () => {
-      if (pageReady && audio.paused && !mutedByUser) play();
-    };
-    ["pointerdown", "keydown", "touchstart"].forEach((event) => {
-      document.addEventListener(event, unlock, { once: true, passive: true });
-    });
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) audio.pause();
-      else if (pageReady && !mutedByUser) play();
-    });
-
-    addEventListener("pagehide", () => {
-      audio.pause();
-      audio.currentTime = 0;
-    }, { once: true });
-
-    setState(false);
-  }
-
-  /* ============ GOOGLE AUTH ============ */
-  async function initGoogleAuth() {
-    const host = $("#googleSignIn");
-    const hint = $("#googleAuthHint");
-    if (!host) return;
-
-    let clientId = "";
-    try { clientId = (await api("/api/auth/google/config")).client_id || ""; } catch (_) {}
-    if (!clientId) {
-      if (hint) {
-        hint.hidden = false;
-        hint.textContent = "Вход через Google пока не настроен владельцем сайта.";
-      }
-      return;
-    }
-
-    const render = () => {
-      if (!window.google?.accounts?.id) return false;
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          try {
-            const data = await api("/api/auth/google", {
-              method: "POST",
-              body: JSON.stringify({ credential: response.credential, language: lang })
-            });
-            currentUser = data.user;
-            if (data.session_token) sessionStorage.setItem("camilla_session_token", data.session_token);
-            $("#authModal")?.classList.remove("on");
-            toast(currentUser?.role === "ADMIN" ? "Вход выполнен: администратор" : "Вход через Google выполнен");
-          } catch (err) {
-            const error = $("#authError");
-            if (error) error.textContent = err.message;
-          }
-        }
-      });
-      host.innerHTML = "";
-      window.google.accounts.id.renderButton(host, {
-        type: "standard", theme: "outline", size: "large",
-        shape: "rectangular", width: Math.min(360, host.clientWidth || 360),
-        text: "signin_with"
-      });
-      return true;
-    };
-
-    if (render()) return;
-    let attempts = 0;
-    const timer = setInterval(() => {
-      if (render() || ++attempts >= 40) clearInterval(timer);
-    }, 250);
-  }
   function sparkles(host) {
     if (!host || RM) return;
     for (let i = 0; i < 26; i++) {
@@ -909,7 +917,7 @@
     $$(".lang-btn").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.lang)));
 
     /* tabs */
-    $("#catTabs")?.addEventListener("click", (e) => {
+    $("#catTabs").addEventListener("click", (e) => {
       const b = e.target.closest(".tab");
       if (!b) return;
       catFilter = b.dataset.cat;
@@ -918,7 +926,7 @@
     });
     /* search */
     const si = $("#servSearch");
-    si?.addEventListener("input", () => { searchQ = si.value.trim().toLowerCase(); renderCatalog(); });
+    si.addEventListener("input", () => { searchQ = si.value.trim().toLowerCase(); renderCatalog(); });
 
     /* booking interactions (delegated) */
     document.addEventListener("click", (e) => {
@@ -930,18 +938,7 @@
       if (e.target.closest("#weekNext")) { weekOffset++; renderWeekSchedule(); return; }
       if (e.target.closest("#weekToday")) { weekOffset=0; renderWeekSchedule(); return; }
       const pickS = e.target.closest("[data-pick-service]");
-      if (pickS) {
-        const id = pickS.dataset.pickService;
-        const wasSelected = B.services[0] === id;
-        B.services = wasSelected ? [] : [id];
-        B.date = null; B.time = null;
-        if (!wasSelected) {
-          const service = serviceById(id);
-          toast(service?.friday ? "Access Bars доступен по пятницам" : "Услуга выбрана ✓");
-        }
-        renderBookingStep();
-        return;
-      }
+      if (pickS) { const id = pickS.dataset.pickService; B.services = B.services[0] === id ? [] : [id]; B.date = null; B.time = null; toast(serviceById(id).friday ? "Access Bars принимается только по пятницам" : "По пятницам принимается только Access Bars"); renderBookingStep(); return; }
       const pickD = e.target.closest("[data-pick-date]");
       if (pickD && !pickD.disabled) { B.date = pickD.dataset.pickDate; B.time = null; renderBookingStep(); return; }
       const pickT = e.target.closest("[data-pick-time]");
@@ -961,9 +958,32 @@
         if (B.step === 2 && !B.date) return shake("#bookPanels", t("book.errDate"));
         if (B.step === 3 && !B.time) return shake("#bookPanels", t("book.errTime"));
         if (B.step === 4) {
-          B.name = $("#bName").value.trim(); B.contact = $("#bContact").value.trim(); B.comment = $("#bComment").value.trim();
-          if (!B.name) return shake("#bookPanels", t("book.errName"));
-          if (!validContact(B.contact)) return shake("#bookPanels", t("book.errContact"));
+          const nameInput = $("#bName");
+          const contactInput = $("#bContact");
+          const commentInput = $("#bComment");
+          B.name = nameInput ? nameInput.value.trim() : B.name;
+          B.contact = contactInput ? contactInput.value.trim() : B.contact;
+          B.comment = commentInput ? commentInput.value.trim() : B.comment;
+
+          const nRes = validateName(B.name);
+          if (!nRes.valid) {
+            if (nameInput) {
+              nameInput.focus();
+              const wrap = nameInput.closest(".input-wrap");
+              if (wrap) { wrap.classList.add("is-invalid"); }
+            }
+            return shake("#bookPanels", nRes.msg);
+          }
+
+          const cRes = validateContact(B.contact);
+          if (!cRes.valid) {
+            if (contactInput) {
+              contactInput.focus();
+              const wrap = contactInput.closest(".input-wrap");
+              if (wrap) { wrap.classList.add("is-invalid"); }
+            }
+            return shake("#bookPanels", cRes.msg);
+          }
         }
         B.step = Math.min(5, B.step + 1);
         renderBookingStep();
@@ -972,42 +992,23 @@
       if (e.target.closest("#bookBack")) { B.step = Math.max(1, B.step - 1); renderBookingStep(); return; }
       if (e.target.closest("#restart")) { Object.assign(B, { step: 1, services: [], date: null, time: null, name: "", contact: "", comment: "" }); renderBookingStep(); return; }
       if (e.target.closest("#copyMsg")) {
-        navigator.clipboard?.writeText(bookingMessage()).then(() => toast(t("book.copied"))).catch(() => toast(bookingMessage()));
+        navigator.clipboard.writeText(bookingMessage()).then(() => toast(t("book.copied")));
         return;
       }
-      if (e.target.closest("#sendTg")) {
-        if (!currentUser) return showAuth();
-        if (!B.services.length || !B.date || !B.time || !B.name || !validContact(B.contact)) {
-          return shake("#bookPanels", "Проверьте данные записи");
-        }
-        const startMinutes = Number(B.time.slice(0, 2)) * 60 + Number(B.time.slice(3, 5));
-        const endTime = timeLabel(startMinutes + totalMinutes());
-        const button = e.target.closest("#sendTg");
+      if (e.target.closest("#submitBooking, #sendTg")) {
+        const button = e.target.closest("#submitBooking, #sendTg");
         button.disabled = true;
-        button.textContent = "Сохраняем…";
-        api("/api/bookings", { method: "POST", body: JSON.stringify({
-          specialist_id: 1, service_id: B.services[0],
-          starts_at: `${B.date}T${B.time}`, ends_at: `${B.date}T${endTime}`,
-          contact: B.contact, notes: B.comment
-        })})
-          .then(() => {
-            localStorage.setItem("camilla_last_booking", JSON.stringify({date:B.date,time:B.time,services:B.services,name:B.name,number:bookingNumber(),contact:B.contact}));
-            navigator.clipboard.writeText(bookingMessage()).catch(() => {});
-            loadOccupiedBookings();
-            toast("Запись сохранена");
-            window.open(CONFIG.telegramURL, "_blank", "noopener");
-          })
-          .catch((err) => { button.disabled = false; button.textContent = "Подтвердить и сохранить"; toast(err.message); });
+        saveBooking(button.id === "sendTg").catch((err) => toast(err.message)).finally(() => { button.disabled = false; });
         return;
       }
-
+      if (e.target.closest("#sendIg")) { navigator.clipboard.writeText(bookingMessage()).catch(() => {}); toast(t("book.copied")); return; }
 
       /* burger */
       if (e.target.closest("#burger")) {
         document.body.classList.toggle("menu-open");
         return;
       }
-      if (e.target.closest(".mobile-menu a")) document.body.classList.remove("menu-open");
+      $$(".mobile-menu a").forEach((a) => a.addEventListener("click", () => document.body.classList.remove("menu-open"), { once: true }));
 
       /* totop */
       if (e.target.closest("#totop")) { scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); return; }
@@ -1030,84 +1031,30 @@
     toast(msg);
   }
 
-  /* ============ SITE LOADER ============ */
-  function siteLoader() {
-    const loader = $("#siteLoader");
-    if (!loader) return;
-
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      loader.classList.add("is-hidden");
-      document.body.classList.remove("site-is-loading");
-      document.body.style.overflow = "";
-      window.dispatchEvent(new CustomEvent("camilla:ready"));
-    };
-
-    document.body.classList.add("site-is-loading");
-    document.body.style.overflow = "hidden";
-
-    const minTime = new Promise((resolve) => setTimeout(resolve, 1900));
-    const pageReady = document.readyState === "complete"
-      ? Promise.resolve()
-      : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
-
-    Promise.all([minTime, pageReady]).then(() => {
-      requestAnimationFrame(() => requestAnimationFrame(finish));
-    });
-
-    setTimeout(finish, 4800);
-  }
-
-  /* ============ HERO MOUSE DEPTH ============ */
-  function heroMotion() {
-    if (RM || !window.matchMedia("(pointer:fine)").matches) return;
-    const hero = $(".hero");
-    const cards = $$(".hero-card");
-    if (!hero || !cards.length) return;
-
-    let raf = 0, tx = 0, ty = 0, cx = 0, cy = 0;
-    const render = () => {
-      cx += (tx - cx) * 0.075;
-      cy += (ty - cy) * 0.075;
-      cards.forEach((card, index) => {
-        const depth = index === 0 ? 1 : index === 1 ? 1.55 : 1.9;
-        card.style.setProperty("--mx", cx * depth + "px");
-        card.style.setProperty("--my", cy * depth + "px");
-      });
-      raf = requestAnimationFrame(render);
-    };
-    hero.addEventListener("pointermove", (e) => {
-      const r = hero.getBoundingClientRect();
-      tx = ((e.clientX - (r.left + r.width / 2)) / r.width) * 14;
-      ty = ((e.clientY - (r.top + r.height / 2)) / r.height) * 10;
-    }, { passive:true });
-    hero.addEventListener("pointerleave", () => { tx = 0; ty = 0; }, { passive:true });
-    raf = requestAnimationFrame(render);
-    addEventListener("pagehide", () => cancelAnimationFrame(raf), { once:true });
-  }
-
   /* ============ INIT ============ */
   function init() {
-    siteLoader();
+    const loader = $("#siteLoader");
+    const dismissLoader = () => {
+      if (!loader) return;
+      loader.classList.add("is-hidden");
+      document.body.classList.remove("site-is-loading");
+      setTimeout(() => loader.remove(), 650);
+    };
+    window.addEventListener("load", dismissLoader, { once: true });
+    setTimeout(dismissLoader, 2600);
     renderMedia();
     splitHero();
-    heroMotion();
     applyI18n();
     observeReveals(document);
     counters();
     cursor();
-    brushCursor();
     ripple();
     magnetic();
     tilt();
     scrollFx();
     reel();
     lightbox();
-    music();
     authEvents();
-    initGoogleAuth();
     events();
     loadUser();
     loadOccupiedBookings();
@@ -1115,34 +1062,4 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
-})();
-
-
-/* ===== SITE 2 — MICRO INTERACTIONS v2 ===== */
-(()=>{
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const ready=()=>{
-    if(document.querySelector('.site2-progress')===null){
-      const bar=document.createElement('div');bar.className='site2-progress';document.body.appendChild(bar);
-      const update=()=>{const max=document.documentElement.scrollHeight-innerHeight;bar.style.transform='scaleX('+(max>0?scrollY/max:0)+')'};
-      addEventListener('scroll',update,{passive:true});update();
-    }
-    if(!reduce && !document.querySelector('.site2-spotlight')){
-      const spot=document.createElement('div');spot.className='site2-spotlight';document.body.appendChild(spot);
-      let raf=0,x=0,y=0;
-      addEventListener('pointermove',e=>{x=e.clientX;y=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{spot.style.left=x+'px';spot.style.top=y+'px';spot.style.opacity='1';raf=0})},{passive:true});
-      addEventListener('pointerleave',()=>spot.style.opacity='0');
-    }
-    if(!reduce){
-      const candidates=[...document.querySelectorAll('section,.service-card,.contact-card,.hours-card,.book-card,.ig-item,.hero-card,.reel-card,.faq-item')];
-      candidates.forEach((el,i)=>{if(el.dataset.site2Reveal)return;el.dataset.site2Reveal='1';el.classList.add('site2-reveal');el.style.setProperty('--reveal-delay',Math.min(i%6,5)*55+'ms')});
-      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -35px'});
-      document.querySelectorAll('.site2-reveal').forEach(el=>io.observe(el));
-      document.querySelectorAll('.section-title').forEach(el=>{const o=new IntersectionObserver(es=>{if(es[0].isIntersecting){el.classList.add('site2-active');o.disconnect()}},{threshold:.7});o.observe(el)});
-      document.addEventListener('click',e=>{const b=e.target.closest('button,.btn,.btn-primary,.btn-ghost,.chip,.tab');if(!b)return;const r=b.getBoundingClientRect();const s=document.createElement('span');s.className='site2-ripple';s.style.left=(e.clientX-r.left)+'px';s.style.top=(e.clientY-r.top)+'px';b.appendChild(s);setTimeout(()=>s.remove(),750)},{passive:true});
-      document.querySelectorAll('[data-tilt],.hero-card.float,.ig-item,.service-card').forEach(el=>{el.classList.add('site2-tilt');el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;el.style.transform='perspective(900px) rotateX('+(-py*4)+'deg) rotateY('+(px*5)+'deg) translateY(-4px)'},{passive:true});el.addEventListener('pointerleave',()=>{el.style.transform=''},{passive:true})});
-      document.querySelectorAll('img').forEach(img=>{if(img.closest('.site2-image'))return;const wrap=img.closest('.hero-card,.ig-item,.reel-card,.portfolio-item');if(wrap)wrap.classList.add('site2-image')});
-    }
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();

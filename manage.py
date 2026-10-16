@@ -43,13 +43,6 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
             return APIHandler.do_POST(self)
         self.send_error(404)
 
-    def do_OPTIONS(self):
-        # Browsers preflight cross-origin JSON requests. Forward API preflights
-        # to the API handler so its origin allowlist and CORS policy apply.
-        if self.path.startswith("/api/"):
-            return APIHandler.do_OPTIONS(self)
-        self.send_error(404)
-
 
 def main() -> None:
     init_db()
@@ -73,11 +66,8 @@ def main() -> None:
     except ValueError:
         parser.error("port must be a number from 1 to 65535")
 
-    class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
-        allow_reuse_address = True
-        daemon_threads = True
-
-    with ReusableThreadingTCPServer((host, port), SiteHandler) as server:
+    with socketserver.ThreadingTCPServer((host, port), SiteHandler) as server:
+        server.allow_reuse_address = True
         print(f"CAMILLA is running at http://{host}:{port}/")
         print("Press Ctrl+C to stop.")
         try:

@@ -1,9 +1,5 @@
-# CAMILLA local/runtime files
-camilla.sqlite3
 .camilla-owner-credentials.txt
 .env
+camilla.sqlite3
 __pycache__/
-*.py[cod]
 .DS_Store
-.venv/
-venv/
