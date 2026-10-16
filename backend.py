@@ -68,6 +68,16 @@ ALLOWED_ORIGINS = {
 }
 
 
+def is_allowed_origin(origin: str) -> bool:
+    if not origin:
+        return True
+    if origin in ALLOWED_ORIGINS:
+        return True
+    if origin.endswith(".onrender.com") or origin.endswith(".vercel.app") or "localhost" in origin or "127.0.0.1" in origin:
+        return True
+    return False
+
+
 def db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -331,28 +341,34 @@ class APIHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         origin = self.headers.get("Origin", "")
-        if origin in ALLOWED_ORIGINS:
+        if origin and is_allowed_origin(origin):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Access-Control-Allow-Credentials", "true")
             self.send_header("Vary", "Origin")
+        else:
+            self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(body)))
         if cookies: self.send_header("Set-Cookie", cookies)
-        self.end_headers(); self.wfile.write(body)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
     def do_OPTIONS(self):
         origin = self.headers.get("Origin", "")
-        if origin not in ALLOWED_ORIGINS:
-            self.send_response(403)
-            self.end_headers()
-            return
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", origin)
-        self.send_header("Access-Control-Allow-Credentials", "true")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("Access-Control-Max-Age", "600")
-        self.send_header("Vary", "Origin")
+        if origin and is_allowed_origin(origin):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Vary", "Origin")
+        else:
+            self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        self.send_header("Access-Control-Max-Age", "86400")
         self.end_headers()
+
+    def do_HEAD(self):
+        return self.do_GET()
 
     def body(self):
         length = int(self.headers.get("Content-Length", 0))

@@ -33,6 +33,17 @@ class SiteHandler(http.server.SimpleHTTPRequestHandler):
     current_user = APIHandler.current_user
     logout = APIHandler.logout
 
+    def do_OPTIONS(self):
+        if self.path.startswith("/api/"):
+            return APIHandler.do_OPTIONS(self)
+        self.send_response(204)
+        self.end_headers()
+
+    def do_HEAD(self):
+        if self.path.startswith("/api/"):
+            return APIHandler.do_HEAD(self)
+        return super().do_HEAD()
+
     def do_GET(self):
         if self.path.startswith("/api/"):
             return APIHandler.do_GET(self)
